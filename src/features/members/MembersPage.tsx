@@ -89,35 +89,137 @@ const MembersPage = () => {
     printWindow.document.write(`
       <html>
         <head>
-          <title>Cetak QR Member - ${member.name}</title>
+          <title>Member Card - ${member.name}</title>
           <style>
-            body { font-family: sans-serif; display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100vh; margin: 0; }
-            .card { border: 2px solid #0ea5e9; padding: 40px; border-radius: 20px; text-align: center; }
-            h1 { color: #0ea5e9; margin-bottom: 5px; }
-            p { color: #64748b; margin-bottom: 20px; }
-            .footer { margin-top: 20px; font-size: 12px; color: #94a3b8; }
+            @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;800&display=swap');
+            body { 
+              font-family: 'Plus Jakarta Sans', sans-serif; 
+              display: flex; 
+              align-items: center; 
+              justify-content: center; 
+              height: 100vh; 
+              margin: 0;
+              background-color: #f8fafc;
+            }
+            .card { 
+              width: 350px;
+              background: white;
+              border-radius: 24px;
+              overflow: hidden;
+              box-shadow: 0 20px 25px -5px rgb(0 0 0 / 0.1);
+              border: 1px solid #e2e8f0;
+              position: relative;
+            }
+            .header {
+              background: linear-gradient(135deg, #0ea5e9 0%, #0284c7 100%);
+              padding: 30px 20px;
+              text-align: center;
+              color: white;
+            }
+            .header h1 { 
+              margin: 0; 
+              font-size: 24px; 
+              letter-spacing: 2px;
+              font-weight: 800;
+              font-style: italic;
+            }
+            .header p { 
+              margin: 5px 0 0; 
+              font-size: 10px; 
+              opacity: 0.8;
+              font-weight: 600;
+              letter-spacing: 4px;
+              text-transform: uppercase;
+            }
+            .content {
+              padding: 30px;
+              text-align: center;
+              display: flex;
+              flex-direction: column;
+              align-items: center;
+            }
+            .qr-wrapper {
+              background: white;
+              padding: 15px;
+              border-radius: 20px;
+              box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1);
+              border: 1px solid #f1f5f9;
+              margin-bottom: 25px;
+            }
+            .member-info h2 {
+              margin: 0;
+              color: #1e293b;
+              font-size: 20px;
+              font-weight: 800;
+            }
+            .member-info p {
+              margin: 5px 0 0;
+              color: #64748b;
+              font-size: 14px;
+              font-weight: 600;
+            }
+            .footer {
+              background: #f8fafc;
+              padding: 20px;
+              text-align: center;
+              border-top: 1px dashed #e2e8f0;
+            }
+            .footer p {
+              margin: 0;
+              font-size: 10px;
+              color: #94a3b8;
+              line-height: 1.5;
+              font-weight: 500;
+            }
+            .badge {
+              position: absolute;
+              top: 15px;
+              right: 15px;
+              background: rgba(255,255,255,0.2);
+              padding: 4px 10px;
+              border-radius: 100px;
+              font-size: 8px;
+              font-weight: 800;
+              color: white;
+              backdrop-filter: blur(4px);
+              border: 1px solid rgba(255,255,255,0.3);
+            }
           </style>
         </head>
         <body>
           <div class="card">
-            <h1>AGMAL PARFUME</h1>
-            <p>MEMBER CARD</p>
-            <div id="qr-container"></div>
-            <h2>${member.name}</h2>
-            <p>${member.phone}</p>
-            <div class="footer">Tunjukkan QR ini setiap kali transaksi untuk mendapatkan promo!</div>
+            <div class="badge">VIP LOYALTY</div>
+            <div class="header">
+              <h1>AGMAL PARFUM</h1>
+              <p>Member Card</p>
+            </div>
+            <div class="content">
+              <div class="qr-wrapper">
+                <div id="qr-container"></div>
+              </div>
+              <div class="member-info">
+                <h2>${member.name}</h2>
+                <p>${member.phone}</p>
+              </div>
+            </div>
+            <div class="footer">
+              <p>Tunjukkan kartu ini setiap transaksi<br>Kumpulkan 10x Transaksi untuk <b>GRATIS ISI ULANG</b></p>
+            </div>
           </div>
           <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
           <script>
             new QRCode(document.getElementById("qr-container"), {
               text: "${member.id}",
-              width: 256,
-              height: 256
+              width: 160,
+              height: 160,
+              colorDark: "#0f172a",
+              colorLight: "#ffffff",
+              correctLevel: QRCode.CorrectLevel.H
             });
             setTimeout(() => { 
               window.print(); 
               window.onafterprint = () => window.close();
-            }, 500);
+            }, 800);
           </script>
         </body>
       </html>
