@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Search, UserPlus, Phone, MapPin, QrCode, Trash2, X, Printer, MessageSquare } from 'lucide-react';
+import { Search, UserPlus, Phone, MapPin, QrCode, Trash2, X, Printer, MessageSquare, Pencil } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { QRCodeSVG } from 'qrcode.react';
 import { memberService } from '../../services/memberService';
@@ -44,14 +44,30 @@ const MembersPage = () => {
   const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
-      await memberService.create(formData);
-      toast.success('Member baru berhasil terdaftar');
+      if (selectedMember) {
+        await memberService.update(selectedMember.id, formData);
+        toast.success('Data member berhasil diperbarui');
+      } else {
+        await memberService.create(formData);
+        toast.success('Member baru berhasil terdaftar');
+      }
       setIsModalOpen(false);
       setFormData({ name: '', phone: '', address: '' });
+      setSelectedMember(null);
       fetchMembers();
     } catch (error: any) {
-      toast.error('Gagal mendaftarkan member: ' + (error.message || 'Cek koneksi database'));
+      toast.error('Gagal menyimpan data: ' + (error.message || 'Cek koneksi database'));
     }
+  };
+
+  const handleEdit = (member: any) => {
+    setSelectedMember(member);
+    setFormData({
+      name: member.name,
+      phone: member.phone,
+      address: member.address || ''
+    });
+    setIsModalOpen(true);
   };
 
   const handleDelete = async (id: string, name: string) => {
@@ -187,7 +203,13 @@ const MembersPage = () => {
                   onClick={() => sendWhatsApp(member)}
                   className="flex-1 py-3 bg-emerald-50 text-emerald-600 rounded-xl font-bold text-xs flex items-center justify-center gap-2 hover:bg-emerald-500 hover:text-white transition-all"
                 >
-                  <MessageSquare size={16} /> Kirim WA
+                  <MessageSquare size={16} /> WA
+                </button>
+                <button 
+                  onClick={() => handleEdit(member)}
+                  className="px-4 py-3 bg-slate-50 text-slate-400 rounded-xl hover:text-brand-primary transition-colors"
+                >
+                  <Pencil size={16} />
                 </button>
                 <button 
                   onClick={() => handleDelete(member.id, member.name)}
@@ -201,22 +223,35 @@ const MembersPage = () => {
         )}
       </div>
 
-      {/* Modal Daftar Member */}
+      {/* Modal Daftar/Edit Member */}
       <AnimatePresence>
         {isModalOpen && (
           <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
             <motion.div 
               initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
               className="absolute inset-0 bg-slate-900/60 backdrop-blur-sm"
-              onClick={() => setIsModalOpen(false)}
+              onClick={() => {
+                setIsModalOpen(false);
+                setSelectedMember(null);
+                setFormData({ name: '', phone: '', address: '' });
+              }}
             />
             <motion.div 
               initial={{ opacity: 0, scale: 0.9, y: 20 }} animate={{ opacity: 1, scale: 1, y: 0 }} exit={{ opacity: 0, scale: 0.9, y: 20 }}
               className="relative w-full max-w-md bg-white rounded-3xl shadow-2xl p-8"
             >
               <div className="flex justify-between items-center mb-6">
-                <h3 className="text-2xl font-bold text-slate-800 font-display">Registrasi Member</h3>
-                <button onClick={() => setIsModalOpen(false)} className="p-2 hover:bg-slate-100 rounded-full transition-colors">
+                <h3 className="text-2xl font-bold text-slate-800 font-display">
+                  {selectedMember ? 'Edit Data Member' : 'Registrasi Member'}
+                </h3>
+                <button 
+                  onClick={() => {
+                    setIsModalOpen(false);
+                    setSelectedMember(null);
+                    setFormData({ name: '', phone: '', address: '' });
+                  }} 
+                  className="p-2 hover:bg-slate-100 rounded-full transition-colors"
+                >
                   <X size={24} className="text-slate-400" />
                 </button>
               </div>
@@ -254,7 +289,7 @@ const MembersPage = () => {
 
                 <div className="pt-4">
                   <button type="submit" className="w-full py-4 bg-brand-primary text-white font-bold rounded-2xl shadow-xl shadow-brand-primary/25 hover:bg-sky-600 transition-all text-lg active:scale-[0.98]">
-                    Daftar Sekarang
+                    {selectedMember ? 'Simpan Perubahan' : 'Daftar Sekarang'}
                   </button>
                 </div>
               </form>
