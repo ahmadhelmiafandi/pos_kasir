@@ -54,6 +54,18 @@ const MembersPage = () => {
     }
   };
 
+  const handleDelete = async (id: string, name: string) => {
+    if (window.confirm(`Apakah Anda yakin ingin menghapus member ${name}?`)) {
+      try {
+        await memberService.delete(id);
+        toast.success(`Member ${name} berhasil dihapus`);
+        fetchMembers();
+      } catch (error) {
+        toast.error('Gagal menghapus member');
+      }
+    }
+  };
+
   const printQR = (member: any) => {
     const printWindow = window.open('', '_blank');
     if (!printWindow) return;
@@ -178,6 +190,7 @@ const MembersPage = () => {
                   <MessageSquare size={16} /> Kirim WA
                 </button>
                 <button 
+                  onClick={() => handleDelete(member.id, member.name)}
                   className="px-4 py-3 bg-slate-50 text-slate-400 rounded-xl hover:text-brand-danger transition-colors"
                 >
                   <Trash2 size={16} />

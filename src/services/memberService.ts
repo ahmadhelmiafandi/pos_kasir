@@ -70,5 +70,13 @@ export const memberService = {
       .eq('id', id);
 
     if (error) throw error;
+  },
+
+  delete: async (id: string) => {
+    const { error } = await supabase
+      .from('members')
+      .delete()
+      .eq('id', id);
+    if (error) throw error;
   }
 };
