@@ -26,6 +26,10 @@ const ProductsPage = () => {
     type: 'PARFUM' as 'PARFUM' | 'NON-PARFUM'
   });
 
+  // Calculator states
+  const [calcMl, setCalcMl] = useState('');
+  const [calcPrice, setCalcPrice] = useState('');
+
   // Get unique categories from products
   const categories = ['Semua Kategori', ...new Set(products.map(p => p.category).filter(Boolean))];
 
@@ -69,6 +73,8 @@ const ProductsPage = () => {
         type: 'PARFUM'
       });
     }
+    setCalcMl('');
+    setCalcPrice('');
     setIsModalOpen(true);
   };
 
@@ -289,6 +295,50 @@ const ProductsPage = () => {
                       className="w-full px-5 py-3 bg-slate-50 border border-brand-primary/20 rounded-2xl focus:ring-4 focus:ring-brand-primary/10 outline-hidden transition-all font-bold"
                     />
                   </div>
+
+                  {/* Kalkulator Modal khusus Parfum */}
+                  {formData.type === 'PARFUM' && (
+                    <div className="col-span-2 p-4 bg-brand-primary/5 rounded-2xl border border-brand-primary/10 space-y-3">
+                      <p className="text-xs font-bold text-brand-primary uppercase tracking-wider flex items-center gap-2">
+                        <TrendingUp size={14} />
+                        Kalkulator Modal (Bantu Hitung Per Ml)
+                      </p>
+                      <div className="grid grid-cols-2 gap-4">
+                        <div className="space-y-1">
+                          <label className="text-[10px] font-bold text-slate-400 uppercase ml-1">Beli Berapa Ml?</label>
+                          <input 
+                            type="number"
+                            placeholder="Contoh: 1000"
+                            value={calcMl}
+                            className="w-full px-3 py-2 bg-white border border-slate-100 rounded-xl text-sm outline-hidden"
+                            onChange={(e) => {
+                              const ml = e.target.value;
+                              setCalcMl(ml);
+                              if (ml && calcPrice) {
+                                setFormData({ ...formData, cost_price: Math.round(parseFloat(calcPrice) / parseFloat(ml)) });
+                              }
+                            }}
+                          />
+                        </div>
+                        <div className="space-y-1">
+                          <label className="text-[10px] font-bold text-slate-400 uppercase ml-1">Total Harga Beli (Rp)</label>
+                          <input 
+                            type="number"
+                            placeholder="Contoh: 679000"
+                            value={calcPrice}
+                            className="w-full px-3 py-2 bg-white border border-slate-100 rounded-xl text-sm outline-hidden"
+                            onChange={(e) => {
+                              const price = e.target.value;
+                              setCalcPrice(price);
+                              if (calcMl && price) {
+                                setFormData({ ...formData, cost_price: Math.round(parseFloat(price) / parseFloat(calcMl)) });
+                              }
+                            }}
+                          />
+                        </div>
+                      </div>
+                    </div>
+                  )}
 
                   <div className="space-y-1">
                     <label className="text-sm font-bold text-slate-700 ml-1">Stok Awal</label>
