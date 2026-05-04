@@ -84,20 +84,11 @@ const CartContent = ({
 
         <div className="space-y-4 mt-4 pt-4 border-t border-slate-200">
            <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-hide">
-              {[10000, 20000, 50000, 100000].map(amount => (
-                <button 
-                  key={amount}
-                  onClick={() => setCashInput((prev: string) => (parseInt(prev || '0') + amount).toString())}
-                  className="px-3 py-2 bg-white border border-slate-200 rounded-xl text-xs font-bold text-slate-600 hover:border-brand-primary hover:text-brand-primary whitespace-nowrap transition-all"
-                >
-                  +{amount.toLocaleString()}
-                </button>
-              ))}
               <button 
                 onClick={() => setCashInput(total.toString())}
-                className="px-3 py-2 bg-brand-primary/10 border border-brand-primary/20 rounded-xl text-xs font-bold text-brand-primary whitespace-nowrap"
+                className="w-full py-3 bg-brand-primary text-white rounded-2xl text-sm font-bold shadow-lg shadow-brand-primary/20 active:scale-95 transition-all"
               >
-                Uang Pas
+                Uang Pas (Rp {total.toLocaleString()})
               </button>
            </div>
 
@@ -256,21 +247,18 @@ const POSPage = () => {
                 layout
                 key={p.id}
                 onClick={() => handleProductSelect(p)}
-                className="bg-white p-4 lg:p-5 rounded-3xl border border-slate-100 shadow-sm hover:shadow-lg hover:border-brand-primary/20 transition-all text-left flex flex-col group active:scale-95"
+                className="bg-white p-4 lg:p-5 rounded-3xl border border-slate-100 shadow-sm hover:shadow-lg hover:border-brand-primary/20 transition-all text-left flex flex-col group active:scale-95 relative overflow-hidden"
               >
+                {/* Stock Badge */}
+                <div className={`absolute top-0 right-0 px-3 py-1 rounded-bl-2xl font-bold text-[10px] uppercase ${p.stock <= 10 ? 'bg-brand-danger text-white' : 'bg-slate-100 text-slate-500'}`}>
+                  {p.stock}
+                </div>
+
                 <div className="w-10 h-10 lg:w-12 lg:h-12 bg-slate-50 rounded-2xl flex items-center justify-center text-brand-primary font-bold text-lg lg:text-xl italic mb-3 lg:mb-4 group-hover:bg-brand-primary group-hover:text-white transition-colors">
                   {p.name.charAt(0)}
                 </div>
-                <h4 className="font-bold text-slate-800 text-sm lg:text-base line-clamp-2 mb-1">{p.name}</h4>
-                <div className="flex justify-between items-start mb-3 h-7">
-                  <p className="text-slate-400 text-[10px] font-bold uppercase tracking-widest">{p.category}</p>
-                  <div className="flex flex-col items-end">
-                    <span className="text-[8px] text-slate-300 font-bold uppercase leading-none mb-0.5">Stok</span>
-                    <span className={`text-xs font-black leading-none ${p.stock <= 10 ? 'text-brand-danger' : 'text-slate-500'}`}>
-                      {p.stock}
-                    </span>
-                  </div>
-                </div>
+                <h4 className="font-bold text-slate-800 text-sm lg:text-base line-clamp-2 mb-1 pr-6">{p.name}</h4>
+                <p className="text-slate-400 text-[10px] font-bold uppercase tracking-widest mb-2 lg:mb-3">{p.category}</p>
                 <p className="mt-auto font-display font-bold text-brand-primary text-base lg:text-lg">
                   Rp {p.price.toLocaleString()}
                   <span className="text-[10px] lg:text-xs text-slate-400 font-sans ml-1">{p.type === 'PARFUM' ? '/ml' : '/pcs'}</span>
