@@ -224,6 +224,7 @@ const MembersPage = () => {
         </body>
       </html>
     `);
+    printWindow.document.close();
   };
 
   const filtered = members.filter(m => 
