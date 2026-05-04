@@ -24,15 +24,25 @@ const ProtectedRoute = ({ children, allowedRoles }: { children: React.ReactNode,
 };
 
 export default function App() {
-  const { isAuthenticated } = useAuthStore();
+  const { isAuthenticated, user } = useAuthStore();
 
   return (
     <BrowserRouter>
       <Toaster position="top-right" expand={true} richColors />
       <Routes>
         <Route 
+          path="/" 
+          element={
+            !isAuthenticated ? (
+              <Navigate to="/login" />
+            ) : (
+              <Navigate to={user?.role === 'KASIR' ? '/pos' : '/dashboard'} />
+            )
+          } 
+        />
+        <Route 
           path="/login" 
-          element={!isAuthenticated ? <LoginPage /> : <Navigate to="/dashboard" />} 
+          element={!isAuthenticated ? <LoginPage /> : <Navigate to="/" />} 
         />
         
         <Route 
