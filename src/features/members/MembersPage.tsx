@@ -114,7 +114,10 @@ const MembersPage = () => {
               width: 256,
               height: 256
             });
-            setTimeout(() => { window.print(); window.close(); }, 500);
+            setTimeout(() => { 
+              window.print(); 
+              window.onafterprint = () => window.close();
+            }, 500);
           </script>
         </body>
       </html>
