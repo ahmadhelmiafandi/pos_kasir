@@ -159,7 +159,25 @@ const POSPage = () => {
           <span className="text-2xl font-bold text-brand-primary font-display tracking-tight">Rp {total.toLocaleString()}</span>
         </div>
 
-        <div className="space-y-2 mt-4 pt-4 border-t border-slate-200">
+        <div className="space-y-4 mt-4 pt-4 border-t border-slate-200">
+           <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-hide">
+              {[10000, 20000, 50000, 100000].map(amount => (
+                <button 
+                  key={amount}
+                  onClick={() => setCashInput((prev) => (parseInt(prev || '0') + amount).toString())}
+                  className="px-3 py-2 bg-white border border-slate-200 rounded-xl text-xs font-bold text-slate-600 hover:border-brand-primary hover:text-brand-primary whitespace-nowrap transition-all"
+                >
+                  +{amount.toLocaleString()}
+                </button>
+              ))}
+              <button 
+                onClick={() => setCashInput(total.toString())}
+                className="px-3 py-2 bg-brand-primary/10 border border-brand-primary/20 rounded-xl text-xs font-bold text-brand-primary whitespace-nowrap"
+              >
+                Uang Pas
+              </button>
+           </div>
+
            <div className="relative">
               <span className="absolute left-4 top-1/2 -translate-y-1/2 font-bold text-slate-400">Rp</span>
               <input 
@@ -170,9 +188,14 @@ const POSPage = () => {
                 onChange={(e) => setCashInput(e.target.value)}
               />
            </div>
+
            <div className="flex justify-between items-center px-2">
-              <span className="text-sm font-semibold text-slate-400">Kembalian:</span>
-              <span className="font-bold text-brand-success">Rp {change.toLocaleString()}</span>
+              <span className="text-sm font-semibold text-slate-400">
+                {parseInt(cashInput || '0') < total ? 'Kurang:' : 'Kembalian:'}
+              </span>
+              <span className={`font-bold ${parseInt(cashInput || '0') < total ? 'text-brand-danger' : 'text-brand-success'}`}>
+                Rp {Math.abs(parseInt(cashInput || '0') - total).toLocaleString()}
+              </span>
            </div>
         </div>
 
