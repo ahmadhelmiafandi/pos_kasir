@@ -31,11 +31,27 @@ export const dashboardService = {
 
     const itemsSold = items.reduce((acc, curr) => acc + (curr.quantity || 0) + (curr.ml || 0), 0);
 
+    // 3. Item Terlaris (Berdasarkan jumlah terjual)
+    const { data: popularItems, error: popError } = await supabase
+      .from('transaction_items')
+      .select('name, quantity, ml')
+      .gte('created_at', startISO);
+
+    if (popError) throw popError;
+
+    const itemStats: Record<string, number> = {};
+    popularItems.forEach(item => {
+      const amount = (item.quantity || 0) + (item.ml || 0);
+      itemStats[item.name] = (itemStats[item.name] || 0) + amount;
+    });
+
+    const topItem = Object.entries(itemStats).sort((a, b) => b[1] - a[1])[0]?.[0] || 'N/A';
+
     return {
       totalSales,
       transactionCount,
       itemsSold,
-      topItem: 'Agmal Mix', // Placeholder
+      topItem,
     };
   },
 
