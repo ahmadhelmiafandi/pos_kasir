@@ -90,6 +90,13 @@ const DashboardPage = () => {
           color="brand-primary" 
         />
         <StatCard 
+          icon={TrendingUp} 
+          label="Untung Bersih" 
+          value={`Rp ${(stats as any).netProfit?.toLocaleString() || 0}`} 
+          subValue="Est. Profit" 
+          color="brand-success" 
+        />
+        <StatCard 
           icon={Users} 
           label="Transaksi" 
           value={stats.transactionCount.toString()} 
@@ -98,13 +105,6 @@ const DashboardPage = () => {
         />
         <StatCard 
           icon={PackageCheck} 
-          label="Produk Terjual" 
-          value={stats.itemsSold.toString()} 
-          subValue="ml/items terjual" 
-          color="brand-success" 
-        />
-        <StatCard 
-          icon={TrendingUp} 
           label="Item Terlaris" 
           value={stats.topItem} 
           subValue="Produk paling dicari" 

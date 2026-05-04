@@ -4,6 +4,7 @@ export interface Product {
   id: string;
   name: string;
   price: number;
+  cost_price: number;
   stock: number;
   category: string;
   type: ProductType;
@@ -11,6 +12,7 @@ export interface Product {
 }
 
 export interface CartItem extends Product {
+  cost_price: number;
   ml?: number;
   quantity: number;
   subtotal: number;

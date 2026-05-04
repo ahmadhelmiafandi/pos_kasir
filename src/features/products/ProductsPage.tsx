@@ -20,6 +20,7 @@ const ProductsPage = () => {
     id: '',
     name: '',
     price: 0,
+    cost_price: 0,
     stock: 0,
     category: '',
     type: 'PARFUM' as 'PARFUM' | 'NON-PARFUM'
@@ -51,6 +52,7 @@ const ProductsPage = () => {
         id: product.id,
         name: product.name,
         price: product.price,
+        cost_price: product.cost_price || 0,
         stock: product.stock,
         category: product.category,
         type: product.type
@@ -61,6 +63,7 @@ const ProductsPage = () => {
         id: Math.random().toString(36).substr(2, 9),
         name: '',
         price: 0,
+        cost_price: 0,
         stock: 0,
         category: '',
         type: 'PARFUM'
@@ -266,13 +269,24 @@ const ProductsPage = () => {
                   </div>
 
                   <div className="space-y-1">
-                    <label className="text-sm font-bold text-slate-700 ml-1">Harga (Rp)</label>
+                    <label className="text-sm font-bold text-slate-700 ml-1">Harga Jual (Rp)</label>
                     <input 
                       type="number"
                       required
                       value={formData.price}
                       onChange={e => setFormData({...formData, price: parseInt(e.target.value)})}
                       className="w-full px-5 py-3 bg-slate-50 border border-slate-100 rounded-2xl focus:ring-4 focus:ring-brand-primary/10 outline-hidden transition-all"
+                    />
+                  </div>
+
+                  <div className="space-y-1">
+                    <label className="text-sm font-bold text-slate-700 ml-1">Harga Modal (Rp)</label>
+                    <input 
+                      type="number"
+                      required
+                      value={formData.cost_price}
+                      onChange={e => setFormData({...formData, cost_price: parseInt(e.target.value)})}
+                      className="w-full px-5 py-3 bg-slate-50 border border-brand-primary/20 rounded-2xl focus:ring-4 focus:ring-brand-primary/10 outline-hidden transition-all font-bold"
                     />
                   </div>
 

@@ -21,26 +21,27 @@ export const dashboardService = {
     const totalSales = transactions.reduce((acc, curr) => acc + curr.total, 0);
     const transactionCount = transactions.length;
 
-    // 2. Produk Terjual
+    // 2. Produk Terjual & Untung Bersih
     const { data: items, error: itemsError } = await supabase
       .from('transaction_items')
-      .select('quantity, ml')
+      .select('name, quantity, ml, subtotal, cost_price')
       .gte('created_at', startISO);
 
     if (itemsError) throw itemsError;
 
     const itemsSold = items.reduce((acc, curr) => acc + (curr.quantity || 0) + (curr.ml || 0), 0);
+    
+    // Hitung Total Modal
+    const totalCost = items.reduce((acc, curr) => {
+      const amount = (curr.quantity || 0) + (curr.ml || 0);
+      return acc + (amount * (curr.cost_price || 0));
+    }, 0);
 
-    // 3. Item Terlaris (Berdasarkan jumlah terjual)
-    const { data: popularItems, error: popError } = await supabase
-      .from('transaction_items')
-      .select('name, quantity, ml')
-      .gte('created_at', startISO);
+    const netProfit = totalSales - totalCost;
 
-    if (popError) throw popError;
-
+    // 3. Item Terlaris
     const itemStats: Record<string, number> = {};
-    popularItems.forEach(item => {
+    items.forEach(item => {
       const amount = (item.quantity || 0) + (item.ml || 0);
       itemStats[item.name] = (itemStats[item.name] || 0) + amount;
     });
@@ -51,6 +52,7 @@ export const dashboardService = {
       totalSales,
       transactionCount,
       itemsSold,
+      netProfit,
       topItem,
     };
   },
@@ -71,7 +73,6 @@ export const dashboardService = {
     if (error) throw error;
 
     if (range === 'day') {
-      // 24 Hour Format
       const hours: Record<string, number> = {};
       for (let i = 0; i < 24; i++) hours[`${String(i).padStart(2, '0')}:00`] = 0;
       
@@ -92,7 +93,6 @@ export const dashboardService = {
     }
 
     if (range === 'month') {
-      // Simple day of month view
       const days: Record<string, number> = {};
       data.forEach(tx => {
         const date = new Date(tx.created_at).getDate();

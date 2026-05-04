@@ -27,6 +27,7 @@ export const transactionService = {
       product_id: item.id,
       name: item.name,
       price: item.price,
+      cost_price: item.cost_price || 0,
       quantity: item.quantity,
       ml: item.ml || null,
       subtotal: item.subtotal,
