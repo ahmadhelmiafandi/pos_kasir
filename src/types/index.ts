@@ -5,7 +5,8 @@ export interface Product {
   name: string;
   price: number;
   cost_price: number;
-  stock: number;
+  initial_stock: number; // Stok Awal
+  stock: number; // Stok Saat Ini
   category: string;
   type: ProductType;
   image?: string;
