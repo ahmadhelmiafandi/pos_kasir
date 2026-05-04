@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Search, UserPlus, Phone, MapPin, QrCode, Trash2, X, Printer } from 'lucide-react';
+import { Search, UserPlus, Phone, MapPin, QrCode, Trash2, X, Printer, MessageSquare } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { QRCodeSVG } from 'qrcode.react';
 import { memberService } from '../../services/memberService';
@@ -33,6 +33,13 @@ const MembersPage = () => {
   useEffect(() => {
     fetchMembers();
   }, []);
+
+  const sendWhatsApp = (member: any) => {
+    const message = `Halo *${member.name}*,\n\nSelamat! Kamu sekarang sudah resmi terdaftar sebagai *Member Agmal Parfum* 💎.\n\nNikmati promo khusus member:\n✅ *GRATIS ISI ULANG* setiap kelipatan 10x transaksi.\n✅ Info promo eksklusif lainnya.\n\nSimpan nomor ini dan tunjukkan QR Code kamu setiap kali belanja ya! Terima kasih sudah berlangganan di Agmal Parfum.`;
+    const encodedMessage = encodeURIComponent(message);
+    const whatsappUrl = `https://wa.me/${member.phone.replace(/^0/, '62')}?text=${encodedMessage}`;
+    window.open(whatsappUrl, '_blank');
+  };
 
   const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -162,7 +169,13 @@ const MembersPage = () => {
                   onClick={() => printQR(member)}
                   className="flex-1 py-3 bg-slate-100 text-slate-600 rounded-xl font-bold text-xs flex items-center justify-center gap-2 hover:bg-brand-primary hover:text-white transition-all"
                 >
-                  <Printer size={16} /> Cetak QR
+                  <Printer size={16} /> Cetak
+                </button>
+                <button 
+                  onClick={() => sendWhatsApp(member)}
+                  className="flex-1 py-3 bg-emerald-50 text-emerald-600 rounded-xl font-bold text-xs flex items-center justify-center gap-2 hover:bg-emerald-500 hover:text-white transition-all"
+                >
+                  <MessageSquare size={16} /> Kirim WA
                 </button>
                 <button 
                   className="px-4 py-3 bg-slate-50 text-slate-400 rounded-xl hover:text-brand-danger transition-colors"
