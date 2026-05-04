@@ -49,8 +49,8 @@ const MembersPage = () => {
       setIsModalOpen(false);
       setFormData({ name: '', phone: '', address: '' });
       fetchMembers();
-    } catch (error) {
-      toast.error('Gagal mendaftarkan member (Nomor WA mungkin sudah terdaftar)');
+    } catch (error: any) {
+      toast.error('Gagal mendaftarkan member: ' + (error.message || 'Cek koneksi database'));
     }
   };
 
