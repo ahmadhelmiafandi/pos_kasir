@@ -1,5 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import { Search, ChevronRight } from 'lucide-react';
+import { Search, ChevronRight, Edit2, Trash2, X, Plus } from 'lucide-react';
+import { motion, AnimatePresence } from 'motion/react';
+import { toast } from 'sonner';
 import { productService } from '../../services/productService';
 import { Product } from '../../types/index';
 
@@ -7,19 +9,90 @@ const ProductsPage = () => {
   const [products, setProducts] = useState<Product[]>([]);
   const [searchTerm, setSearchTerm] = useState('');
   const [isLoading, setIsLoading] = useState(true);
+  
+  // Modal states
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [editingProduct, setEditingProduct] = useState<Product | null>(null);
+  
+  // Form states
+  const [formData, setFormData] = useState({
+    id: '',
+    name: '',
+    price: 0,
+    stock: 0,
+    category: '',
+    type: 'PARFUM' as 'PARFUM' | 'NON-PARFUM'
+  });
+
+  const fetchProducts = async () => {
+    setIsLoading(true);
+    try {
+      const data = await productService.getAll();
+      setProducts(data);
+    } catch (err) {
+      toast.error('Gagal mengambil data produk');
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   useEffect(() => {
-    const fetchProducts = async () => {
-      setIsLoading(true);
-      try {
-        const data = await productService.getAll();
-        setProducts(data);
-      } finally {
-        setIsLoading(false);
-      }
-    };
     fetchProducts();
   }, []);
+
+  const handleOpenModal = (product: Product | null = null) => {
+    if (product) {
+      setEditingProduct(product);
+      setFormData({
+        id: product.id,
+        name: product.name,
+        price: product.price,
+        stock: product.stock,
+        category: product.category,
+        type: product.type
+      });
+    } else {
+      setEditingProduct(null);
+      setFormData({
+        id: Math.random().toString(36).substr(2, 9),
+        name: '',
+        price: 0,
+        stock: 0,
+        category: '',
+        type: 'PARFUM'
+      });
+    }
+    setIsModalOpen(true);
+  };
+
+  const handleSave = async (e: React.FormEvent) => {
+    e.preventDefault();
+    try {
+      if (editingProduct) {
+        await productService.update(editingProduct.id, formData);
+        toast.success('Produk berhasil diperbarui');
+      } else {
+        await productService.create(formData);
+        toast.success('Produk berhasil ditambahkan');
+      }
+      setIsModalOpen(false);
+      fetchProducts();
+    } catch (err) {
+      toast.error('Gagal menyimpan produk');
+    }
+  };
+
+  const handleDelete = async (id: string) => {
+    if (window.confirm('Apakah Anda yakin ingin menghapus produk ini?')) {
+      try {
+        await productService.delete(id);
+        toast.success('Produk berhasil dihapus');
+        fetchProducts();
+      } catch (err) {
+        toast.error('Gagal menghapus produk');
+      }
+    }
+  };
 
   const filtered = products.filter(p => p.name.toLowerCase().includes(searchTerm.toLowerCase()));
 
@@ -30,8 +103,12 @@ const ProductsPage = () => {
           <h2 className="text-3xl font-bold text-slate-800 font-display">Kelola Produk</h2>
           <p className="text-slate-400 mt-1">Daftar inventori parfum dan aksesoris</p>
         </div>
-        <button className="px-6 py-3 bg-brand-primary text-white rounded-2xl font-bold shadow-lg shadow-brand-primary/20 hover:scale-105 transition-transform active:scale-95">
-          + Tambah Produk
+        <button 
+          onClick={() => handleOpenModal()}
+          className="px-6 py-3 bg-brand-primary text-white rounded-2xl font-bold shadow-lg shadow-brand-primary/20 hover:scale-105 transition-transform active:scale-95 flex items-center gap-2"
+        >
+          <Plus size={20} />
+          Tambah Produk
         </button>
       </div>
 
@@ -93,8 +170,17 @@ const ProductsPage = () => {
                   </td>
                   <td className="px-6 py-4">
                     <div className="flex gap-2">
-                      <button className="p-2 text-slate-400 hover:text-brand-primary hover:bg-slate-100 rounded-lg transition-all">
-                        <ChevronRight size={18} />
+                      <button 
+                        onClick={() => handleOpenModal(p)}
+                        className="p-2 text-slate-400 hover:text-brand-primary hover:bg-slate-100 rounded-lg transition-all"
+                      >
+                        <Edit2 size={18} />
+                      </button>
+                      <button 
+                        onClick={() => handleDelete(p.id)}
+                        className="p-2 text-slate-400 hover:text-brand-danger hover:bg-red-50 rounded-lg transition-all"
+                      >
+                        <Trash2 size={18} />
                       </button>
                     </div>
                   </td>
@@ -104,6 +190,105 @@ const ProductsPage = () => {
           </table>
         )}
       </div>
+
+      {/* Modal CRUD */}
+      <AnimatePresence>
+        {isModalOpen && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+            <motion.div 
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="absolute inset-0 bg-slate-900/60 backdrop-blur-sm"
+              onClick={() => setIsModalOpen(false)}
+            />
+            <motion.div 
+              initial={{ opacity: 0, scale: 0.9, y: 20 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.9, y: 20 }}
+              className="relative w-full max-w-lg bg-white rounded-3xl shadow-2xl p-8"
+            >
+              <div className="flex justify-between items-center mb-6">
+                <h3 className="text-2xl font-bold text-slate-800 font-display">
+                  {editingProduct ? 'Edit Produk' : 'Tambah Produk Baru'}
+                </h3>
+                <button onClick={() => setIsModalOpen(false)} className="p-2 hover:bg-slate-100 rounded-full transition-colors">
+                  <X size={24} className="text-slate-400" />
+                </button>
+              </div>
+
+              <form onSubmit={handleSave} className="space-y-4">
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="col-span-2 space-y-1">
+                    <label className="text-sm font-bold text-slate-700 ml-1">Nama Produk</label>
+                    <input 
+                      required
+                      value={formData.name}
+                      onChange={e => setFormData({...formData, name: e.target.value})}
+                      className="w-full px-5 py-3 bg-slate-50 border border-slate-100 rounded-2xl focus:ring-4 focus:ring-brand-primary/10 outline-hidden transition-all"
+                      placeholder="Contoh: Oud Wood Special"
+                    />
+                  </div>
+                  
+                  <div className="space-y-1">
+                    <label className="text-sm font-bold text-slate-700 ml-1">Tipe Produk</label>
+                    <select 
+                      value={formData.type}
+                      onChange={e => setFormData({...formData, type: e.target.value as 'PARFUM' | 'NON-PARFUM'})}
+                      className="w-full px-5 py-3 bg-slate-50 border border-slate-100 rounded-2xl focus:ring-4 focus:ring-brand-primary/10 outline-hidden transition-all"
+                    >
+                      <option value="PARFUM">Parfum (ml)</option>
+                      <option value="NON-PARFUM">Non-Parfum (pcs)</option>
+                    </select>
+                  </div>
+
+                  <div className="space-y-1">
+                    <label className="text-sm font-bold text-slate-700 ml-1">Kategori</label>
+                    <input 
+                      required
+                      value={formData.category}
+                      onChange={e => setFormData({...formData, category: e.target.value})}
+                      className="w-full px-5 py-3 bg-slate-50 border border-slate-100 rounded-2xl focus:ring-4 focus:ring-brand-primary/10 outline-hidden transition-all"
+                      placeholder="Woody, Floral, dll"
+                    />
+                  </div>
+
+                  <div className="space-y-1">
+                    <label className="text-sm font-bold text-slate-700 ml-1">Harga (Rp)</label>
+                    <input 
+                      type="number"
+                      required
+                      value={formData.price}
+                      onChange={e => setFormData({...formData, price: parseInt(e.target.value)})}
+                      className="w-full px-5 py-3 bg-slate-50 border border-slate-100 rounded-2xl focus:ring-4 focus:ring-brand-primary/10 outline-hidden transition-all"
+                    />
+                  </div>
+
+                  <div className="space-y-1">
+                    <label className="text-sm font-bold text-slate-700 ml-1">Stok Awal</label>
+                    <input 
+                      type="number"
+                      required
+                      value={formData.stock}
+                      onChange={e => setFormData({...formData, stock: parseInt(e.target.value)})}
+                      className="w-full px-5 py-3 bg-slate-50 border border-slate-100 rounded-2xl focus:ring-4 focus:ring-brand-primary/10 outline-hidden transition-all"
+                    />
+                  </div>
+                </div>
+
+                <div className="pt-4">
+                  <button 
+                    type="submit"
+                    className="w-full py-4 bg-brand-primary text-white font-bold rounded-2xl shadow-xl shadow-brand-primary/25 hover:bg-sky-600 transition-all text-lg active:scale-[0.98]"
+                  >
+                    {editingProduct ? 'Simpan Perubahan' : 'Tambah Produk'}
+                  </button>
+                </div>
+              </form>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
     </div>
   );
 };
