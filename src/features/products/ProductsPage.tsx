@@ -8,12 +8,13 @@ import { Product } from '../../types/index';
 const ProductsPage = () => {
   const [products, setProducts] = useState<Product[]>([]);
   const [searchTerm, setSearchTerm] = useState('');
+  const [selectedCategory, setSelectedCategory] = useState('Semua Kategori');
   const [isLoading, setIsLoading] = useState(true);
   
   // Modal states
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingProduct, setEditingProduct] = useState<Product | null>(null);
-  
+
   // Form states
   const [formData, setFormData] = useState({
     id: '',
@@ -23,6 +24,9 @@ const ProductsPage = () => {
     category: '',
     type: 'PARFUM' as 'PARFUM' | 'NON-PARFUM'
   });
+
+  // Get unique categories from products
+  const categories = ['Semua Kategori', ...new Set(products.map(p => p.category).filter(Boolean))];
 
   const fetchProducts = async () => {
     setIsLoading(true);
@@ -94,7 +98,11 @@ const ProductsPage = () => {
     }
   };
 
-  const filtered = products.filter(p => p.name.toLowerCase().includes(searchTerm.toLowerCase()));
+  const filtered = products.filter(p => {
+    const matchesSearch = p.name.toLowerCase().includes(searchTerm.toLowerCase());
+    const matchesCategory = selectedCategory === 'Semua Kategori' || p.category === selectedCategory;
+    return matchesSearch && matchesCategory;
+  });
 
   return (
     <div className="space-y-8">
@@ -122,10 +130,14 @@ const ProductsPage = () => {
             onChange={(e) => setSearchTerm(e.target.value)}
           />
         </div>
-        <select className="px-6 py-4 bg-white border border-slate-200 rounded-2xl focus:ring-4 focus:ring-brand-primary/10 transition-all outline-hidden font-medium text-slate-600">
-          <option>Semua Kategori</option>
-          <option>Parfum</option>
-          <option>Aksesoris</option>
+        <select 
+          value={selectedCategory}
+          onChange={(e) => setSelectedCategory(e.target.value)}
+          className="px-6 py-4 bg-white border border-slate-200 rounded-2xl focus:ring-4 focus:ring-brand-primary/10 transition-all outline-hidden font-medium text-slate-600"
+        >
+          {categories.map(cat => (
+            <option key={cat} value={cat}>{cat}</option>
+          ))}
         </select>
       </div>
 
