@@ -208,24 +208,45 @@ const POSPage = () => {
   useEffect(() => {
     let scanner: any = null;
     if (isScannerOpen) {
-      scanner = new Html5QrcodeScanner("reader", { fps: 10, qrbox: 250 }, false);
-      scanner.render(async (decodedText: string) => {
+      // Small delay to ensure the "reader" div is rendered
+      setTimeout(() => {
         try {
-          const member = await memberService.getById(decodedText);
-          if (member) {
-            setSelectedMember(member);
-            toast.success(`Member: ${member.name} terdeteksi!`);
-            setIsScannerOpen(false);
-            scanner.clear();
-          } else {
-            toast.error("QR Code tidak valid");
-          }
-        } catch (e) {
-          toast.error("Gagal membaca member");
+          scanner = new Html5QrcodeScanner("reader", { 
+            fps: 10, 
+            qrbox: { width: 250, height: 250 },
+            aspectRatio: 1.0,
+            rememberLastUsedCamera: true,
+            supportedScanTypes: [0] // 0 = Camera only
+          }, false);
+          
+          scanner.render(async (decodedText: string) => {
+            try {
+              const member = await memberService.getById(decodedText);
+              if (member) {
+                setSelectedMember(member);
+                toast.success(`Member: ${member.name} terdeteksi!`);
+                setIsScannerOpen(false);
+                scanner.clear();
+              } else {
+                toast.error("QR Code tidak valid");
+              }
+            } catch (e) {
+              toast.error("Gagal membaca member");
+            }
+          }, (err: any) => {
+            // Silence common scanning errors
+          });
+        } catch (err) {
+          toast.error("Gagal memulai kamera. Pastikan izin kamera diberikan.");
+          console.error(err);
         }
-      }, (err: any) => {});
+      }, 300);
     }
-    return () => { if (scanner) scanner.clear(); };
+    return () => { 
+      if (scanner) {
+        try { scanner.clear(); } catch(e) {}
+      } 
+    };
   }, [isScannerOpen]);
 
   const handleProductSelect = (product: Product) => {
