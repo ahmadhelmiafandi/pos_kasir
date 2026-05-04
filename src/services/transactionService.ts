@@ -7,6 +7,7 @@ export const transactionService = {
     cash: number;
     change: number;
     items: CartItem[];
+    member_id?: string | null;
   }) => {
     // 1. Insert into transactions table
     const { data: transaction, error: txError } = await supabase
@@ -15,6 +16,7 @@ export const transactionService = {
         total: transactionData.total,
         cash: transactionData.cash,
         change: transactionData.change,
+        member_id: transactionData.member_id || null
       })
       .select()
       .single();

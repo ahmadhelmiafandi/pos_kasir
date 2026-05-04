@@ -65,12 +65,12 @@ const CartContent = ({
             <p className="mt-4 font-medium">Keranjang masih kosong</p>
           </div>
         ) : (
-          cart.map((item: CartItem) => (
+          cart.map((item: CartItem, index: number) => (
             <motion.div 
               layout
               initial={{ opacity: 0, x: 20 }}
               animate={{ opacity: 1, x: 0 }}
-              key={item.id} 
+              key={item.id + index} 
               className="flex items-center gap-4 bg-slate-50 p-4 rounded-2xl border border-slate-100 group"
             >
               <div className="flex-1 min-w-0">
@@ -80,13 +80,13 @@ const CartContent = ({
               <div className="flex items-center gap-3">
                 <input 
                   type="number"
-                  value={item.quantity}
-                  onChange={(e) => onUpdateQty(item.id, parseFloat(e.target.value))}
+                  value={item.type === 'PARFUM' ? item.ml : item.quantity}
+                  onChange={(e) => onUpdateQty(index, item.type === 'PARFUM' ? { ml: parseFloat(e.target.value) } : { quantity: parseInt(e.target.value) })}
                   onWheel={(e) => (e.target as HTMLInputElement).blur()}
                   className="w-16 px-2 py-1 bg-white border border-slate-200 rounded-lg text-center font-bold text-slate-700 outline-hidden focus:border-brand-primary transition-colors"
                 />
                 <button 
-                  onClick={() => onRemove(item.id)}
+                  onClick={() => onRemove(index)}
                   className="p-2 text-slate-400 hover:text-brand-danger hover:bg-red-50 rounded-xl transition-all"
                 >
                   <Trash2 size={18} />
@@ -159,7 +159,8 @@ const CartContent = ({
 };
 
 const POSPage = () => {
-  const { cart, addToCart, removeFromCart, updateQuantity, clearCart, total } = usePOSStore();
+  const { cart, addItem, removeItem, updateItem, clearCart, calculateTotal } = usePOSStore();
+  const total = calculateTotal();
   const [products, setProducts] = useState<Product[]>([]);
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('Semua');
@@ -229,7 +230,7 @@ const POSPage = () => {
       return;
     }
 
-    addToCart(selectedProduct, qty);
+    addItem(selectedProduct, qty);
     setSelectedProduct(null);
     toast.success(`${selectedProduct.name} ditambahkan`);
   };
@@ -239,20 +240,19 @@ const POSPage = () => {
     
     try {
       const transactionData = {
-        total_amount: total,
-        payment_method: 'CASH',
-        cash_amount: parseFloat(cashInput),
-        change_amount: parseFloat(cashInput) - total,
+        total,
+        cash: parseFloat(cashInput),
+        change: parseFloat(cashInput) - total,
         items: cart,
         member_id: selectedMember?.id || null
       };
 
-      await transactionService.create(transactionData);
+      await transactionService.saveTransaction(transactionData);
       
       // Update member transaction count if applicable
       if (selectedMember) {
         // Find total ml purchased in this cart
-        const totalMl = cart.reduce((acc, item) => item.type === 'PARFUM' ? acc + item.quantity : acc, 0);
+        const totalMl = cart.reduce((acc, item) => item.type === 'PARFUM' ? acc + (item.ml || 0) : acc, 0);
         await memberService.incrementTransaction(selectedMember.id, totalMl);
       }
 
@@ -357,8 +357,8 @@ const POSPage = () => {
       <div className="w-full lg:w-[400px] bg-white rounded-3xl border border-slate-100 shadow-sm overflow-hidden flex flex-col">
         <CartContent 
           cart={cart}
-          onRemove={removeFromCart}
-          onUpdateQty={updateQuantity}
+          onRemove={removeItem}
+          onUpdateQty={updateItem}
           total={total}
           cashInput={cashInput}
           setCashInput={setCashInput}
