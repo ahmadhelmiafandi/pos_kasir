@@ -78,5 +78,25 @@ export const memberService = {
       .delete()
       .eq('id', id);
     if (error) throw error;
+  },
+
+  getHistory: async (memberId: string) => {
+    const { data, error } = await supabase
+      .from('transactions')
+      .select(`
+        id,
+        created_at,
+        total_amount,
+        transaction_items (
+          name,
+          quantity,
+          price
+        )
+      `)
+      .eq('member_id', memberId)
+      .order('created_at', { ascending: false });
+    
+    if (error) throw error;
+    return data;
   }
 };

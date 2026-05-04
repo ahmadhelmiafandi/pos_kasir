@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Search, UserPlus, Phone, MapPin, QrCode, Trash2, X, Printer, MessageSquare, Pencil } from 'lucide-react';
+import { Search, UserPlus, Phone, MapPin, QrCode, Trash2, X, Printer, MessageSquare, Pencil, History, TrendingUp } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { QRCodeSVG } from 'qrcode.react';
 import { memberService } from '../../services/memberService';
@@ -11,6 +11,9 @@ const MembersPage = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedMember, setSelectedMember] = useState<any>(null);
+  const [isHistoryModalOpen, setIsHistoryModalOpen] = useState(false);
+  const [memberHistory, setMemberHistory] = useState<any[]>([]);
+  const [isHistoryLoading, setIsHistoryLoading] = useState(false);
 
   const [formData, setFormData] = useState({
     name: '',
@@ -68,6 +71,20 @@ const MembersPage = () => {
       address: member.address || ''
     });
     setIsModalOpen(true);
+  };
+
+  const handleViewHistory = async (member: any) => {
+    setSelectedMember(member);
+    setIsHistoryModalOpen(true);
+    setIsHistoryLoading(true);
+    try {
+      const history = await memberService.getHistory(member.id);
+      setMemberHistory(history);
+    } catch (error) {
+      toast.error('Gagal mengambil riwayat transaksi');
+    } finally {
+      setIsHistoryLoading(false);
+    }
   };
 
   const handleDelete = async (id: string, name: string) => {
@@ -312,6 +329,13 @@ const MembersPage = () => {
                   <MessageSquare size={16} /> WA
                 </button>
                 <button 
+                  onClick={() => handleViewHistory(member)}
+                  className="px-4 py-3 bg-slate-50 text-slate-400 rounded-xl hover:text-brand-primary transition-colors"
+                  title="Riwayat Belanja"
+                >
+                  <History size={16} />
+                </button>
+                <button 
                   onClick={() => handleEdit(member)}
                   className="px-4 py-3 bg-slate-50 text-slate-400 rounded-xl hover:text-brand-primary transition-colors"
                 >
@@ -328,6 +352,108 @@ const MembersPage = () => {
           ))
         )}
       </div>
+
+      {/* Modal Riwayat Belanja */}
+      <AnimatePresence>
+        {isHistoryModalOpen && selectedMember && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+            <motion.div 
+              initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+              className="absolute inset-0 bg-slate-900/60 backdrop-blur-sm"
+              onClick={() => setIsHistoryModalOpen(false)}
+            />
+            <motion.div 
+              initial={{ opacity: 0, scale: 0.9, y: 20 }} animate={{ opacity: 1, scale: 1, y: 0 }} exit={{ opacity: 0, scale: 0.9, y: 20 }}
+              className="relative w-full max-w-2xl bg-white rounded-3xl shadow-2xl overflow-hidden flex flex-col max-h-[85vh]"
+            >
+              <div className="p-8 border-b border-slate-100 flex justify-between items-center bg-slate-50">
+                <div className="flex items-center gap-4">
+                  <div className="w-12 h-12 bg-brand-primary/10 text-brand-primary rounded-2xl flex items-center justify-center">
+                    <History size={24} />
+                  </div>
+                  <div>
+                    <h3 className="text-xl font-bold text-slate-800 font-display">Riwayat Belanja</h3>
+                    <p className="text-sm text-slate-500 font-medium">{selectedMember.name}</p>
+                  </div>
+                </div>
+                <button 
+                  onClick={() => setIsHistoryModalOpen(false)}
+                  className="p-2 hover:bg-white rounded-full transition-colors shadow-sm"
+                >
+                  <X size={24} className="text-slate-400" />
+                </button>
+              </div>
+
+              <div className="flex-1 overflow-y-auto p-8">
+                {isHistoryLoading ? (
+                  <div className="flex flex-col items-center justify-center py-12 gap-4">
+                    <div className="w-10 h-10 border-4 border-slate-100 border-t-brand-primary rounded-full animate-spin" />
+                    <p className="text-slate-400 font-medium">Mengambil data...</p>
+                  </div>
+                ) : memberHistory.length === 0 ? (
+                  <div className="text-center py-12">
+                    <div className="w-20 h-20 bg-slate-50 rounded-full flex items-center justify-center mx-auto mb-4">
+                      <TrendingUp size={32} className="text-slate-200" />
+                    </div>
+                    <p className="text-slate-400 font-medium">Belum ada riwayat transaksi</p>
+                  </div>
+                ) : (
+                  <div className="space-y-6">
+                    {/* Statistik Singkat */}
+                    <div className="grid grid-cols-2 gap-4">
+                      <div className="bg-slate-50 p-4 rounded-2xl border border-slate-100">
+                        <p className="text-[10px] font-bold text-slate-400 uppercase mb-1">Total Belanja</p>
+                        <p className="text-xl font-black text-slate-800">
+                          {new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', maximumFractionDigits: 0 }).format(
+                            memberHistory.reduce((acc, curr) => acc + curr.total_amount, 0)
+                          )}
+                        </p>
+                      </div>
+                      <div className="bg-slate-50 p-4 rounded-2xl border border-slate-100">
+                        <p className="text-[10px] font-bold text-slate-400 uppercase mb-1">Produk Terlaris</p>
+                        <p className="text-xl font-black text-brand-primary">
+                          {(() => {
+                            const counts: any = {};
+                            memberHistory.forEach(h => h.transaction_items.forEach((i: any) => {
+                              counts[i.name] = (counts[i.name] || 0) + i.quantity;
+                            }));
+                            const top = Object.entries(counts).sort((a: any, b: any) => b[1] - a[1])[0];
+                            return top ? top[0].split(' ')[0] : '-'; // Ambil kata pertama (biasanya ukuran atau nama brand)
+                          })()}
+                        </p>
+                      </div>
+                    </div>
+
+                    <div className="space-y-4">
+                      {memberHistory.map((trx) => (
+                        <div key={trx.id} className="p-4 rounded-2xl border border-slate-100 hover:border-brand-primary/20 transition-colors">
+                          <div className="flex justify-between items-start mb-3">
+                            <div>
+                              <p className="text-xs font-bold text-slate-400">{new Date(trx.created_at).toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric', hour: '2-digit', minute: '2-digit' })}</p>
+                              <p className="text-sm font-bold text-slate-800">ID: #{trx.id.slice(0, 8).toUpperCase()}</p>
+                            </div>
+                            <p className="font-black text-brand-primary">
+                              {new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', maximumFractionDigits: 0 }).format(trx.total_amount)}
+                            </p>
+                          </div>
+                          <div className="bg-slate-50 rounded-xl p-3 space-y-2">
+                            {trx.transaction_items.map((item: any, idx: number) => (
+                              <div key={idx} className="flex justify-between text-xs font-medium">
+                                <span className="text-slate-600">{item.name} x{item.quantity}</span>
+                                <span className="text-slate-400">{new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', maximumFractionDigits: 0 }).format(item.price)}</span>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
 
       {/* Modal Daftar/Edit Member */}
       <AnimatePresence>
