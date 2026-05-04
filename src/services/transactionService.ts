@@ -33,6 +33,7 @@ export const transactionService = {
       quantity: item.quantity,
       ml: item.ml || null,
       subtotal: item.subtotal,
+      notes: item.notes || null,
     }));
 
     const { error: itemsError } = await supabase

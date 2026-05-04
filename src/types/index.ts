@@ -17,6 +17,7 @@ export interface CartItem extends Product {
   ml?: number;
   quantity: number;
   subtotal: number;
+  notes?: string;
 }
 
 export interface Transaction {

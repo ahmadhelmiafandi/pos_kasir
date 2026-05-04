@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Search, ShoppingCart, Trash2, CheckCircle, X, ChevronRight, Calculator, User, QrCode } from 'lucide-react';
+import { Search, ShoppingCart, Trash2, CheckCircle, X, ChevronRight, Calculator, User, QrCode, MessageSquare } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { usePOSStore } from './store';
 import { productService } from '../../services/productService';
@@ -71,26 +71,39 @@ const CartContent = ({
               initial={{ opacity: 0, x: 20 }}
               animate={{ opacity: 1, x: 0 }}
               key={item.id + index} 
-              className="flex items-center gap-4 bg-slate-50 p-4 rounded-2xl border border-slate-100 group"
+              className="flex flex-col gap-3 bg-slate-50 p-4 rounded-2xl border border-slate-100 group"
             >
-              <div className="flex-1 min-w-0">
-                <p className="font-bold text-slate-700 truncate">{item.name}</p>
-                <p className="text-xs text-slate-400 font-medium">Rp {item.price.toLocaleString()} / {item.type === 'PARFUM' ? 'ml' : 'pcs'}</p>
+              <div className="flex items-center gap-4">
+                <div className="flex-1 min-w-0">
+                  <p className="font-bold text-slate-700 truncate">{item.name}</p>
+                  <p className="text-xs text-slate-400 font-medium">Rp {item.price.toLocaleString()} / {item.type === 'PARFUM' ? 'ml' : 'pcs'}</p>
+                </div>
+                <div className="flex items-center gap-3">
+                  <input 
+                    type="number"
+                    value={item.type === 'PARFUM' ? item.ml : item.quantity}
+                    onChange={(e) => onUpdateQty(index, item.type === 'PARFUM' ? { ml: parseFloat(e.target.value) } : { quantity: parseInt(e.target.value) })}
+                    onWheel={(e) => (e.target as HTMLInputElement).blur()}
+                    className="w-16 px-2 py-1 bg-white border border-slate-200 rounded-lg text-center font-bold text-slate-700 outline-hidden focus:border-brand-primary transition-colors"
+                  />
+                  <button 
+                    onClick={() => onRemove(index)}
+                    className="p-2 text-slate-400 hover:text-brand-danger hover:bg-red-50 rounded-xl transition-all"
+                  >
+                    <Trash2 size={18} />
+                  </button>
+                </div>
               </div>
-              <div className="flex items-center gap-3">
+              
+              {/* Input Catatan Mix Aroma */}
+              <div className="relative">
+                <MessageSquare size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-300" />
                 <input 
-                  type="number"
-                  value={item.type === 'PARFUM' ? item.ml : item.quantity}
-                  onChange={(e) => onUpdateQty(index, item.type === 'PARFUM' ? { ml: parseFloat(e.target.value) } : { quantity: parseInt(e.target.value) })}
-                  onWheel={(e) => (e.target as HTMLInputElement).blur()}
-                  className="w-16 px-2 py-1 bg-white border border-slate-200 rounded-lg text-center font-bold text-slate-700 outline-hidden focus:border-brand-primary transition-colors"
+                  placeholder="Catatan Mix / Aroma..."
+                  value={item.notes || ''}
+                  onChange={(e) => onUpdateQty(index, { notes: e.target.value })}
+                  className="w-full pl-9 pr-3 py-2 bg-white/50 border border-slate-200 rounded-xl text-[10px] font-medium text-slate-600 outline-hidden focus:border-brand-primary focus:bg-white transition-all"
                 />
-                <button 
-                  onClick={() => onRemove(index)}
-                  className="p-2 text-slate-400 hover:text-brand-danger hover:bg-red-50 rounded-xl transition-all"
-                >
-                  <Trash2 size={18} />
-                </button>
               </div>
             </motion.div>
           ))
