@@ -8,6 +8,132 @@ import { Product } from '../../types/index';
 import { calculateChange, validatePayment } from './utils';
 import { transactionService } from '../../services/transactionService';
 
+// Separate CartContent component to avoid focus loss on re-render
+const CartContent = ({ 
+  cart, 
+  total, 
+  removeFromCart, 
+  cashInput, 
+  setCashInput, 
+  handlePayment, 
+  isProcessing, 
+  showMobileCart, 
+  setShowMobileCart 
+}: any) => {
+  const changeDisplay = useMemo(() => {
+    const cash = parseInt(cashInput || '0');
+    return Math.abs(cash - total);
+  }, [cashInput, total]);
+
+  const isShortage = useMemo(() => {
+    return parseInt(cashInput || '0') < total;
+  }, [cashInput, total]);
+
+  return (
+    <div className="flex flex-col h-full bg-white lg:rounded-3xl lg:border lg:border-slate-100 lg:shadow-xl overflow-hidden">
+      <div className="p-6 border-b border-slate-100 flex items-center justify-between">
+        <div className="flex items-center gap-2">
+          {showMobileCart && (
+            <button onClick={() => setShowMobileCart(false)} className="lg:hidden p-2 -ml-2 text-slate-400">
+              <ArrowLeft size={20} />
+            </button>
+          )}
+          <h3 className="text-xl font-bold text-slate-800 flex items-center gap-2 font-display">
+            <ShoppingCart size={22} className="text-brand-primary" />
+            Order List
+          </h3>
+        </div>
+        <span className="px-3 py-1 bg-slate-100 rounded-full text-xs font-bold text-slate-500">{cart.length} ITEMS</span>
+      </div>
+
+      <div className="flex-1 overflow-y-auto p-6 space-y-4">
+        {cart.length === 0 ? (
+          <div className="flex flex-col items-center justify-center h-full text-slate-300 gap-4 opacity-50">
+            <ShoppingCart size={64} strokeWidth={1} />
+            <p className="font-bold">Belum ada item</p>
+          </div>
+        ) : (
+          cart.map((item: any, idx: number) => (
+            <div key={`${item.id}-${idx}`} className="flex justify-between items-start group">
+              <div className="flex-1">
+                <h4 className="font-bold text-slate-800">{item.name}</h4>
+                <p className="text-xs text-slate-400 font-medium">
+                  {item.type === 'PARFUM' ? `${item.ml} ml` : `${item.quantity} pcs`} × Rp {item.price.toLocaleString()}
+                </p>
+              </div>
+              <div className="flex flex-col items-end gap-2">
+                <span className="font-bold text-slate-700">Rp {item.subtotal.toLocaleString()}</span>
+                <button onClick={() => removeFromCart(idx)} className="text-brand-danger lg:opacity-0 lg:group-hover:opacity-100 transition-opacity">
+                  <X size={14} />
+                </button>
+              </div>
+            </div>
+          ))
+        )}
+      </div>
+
+      <div className="p-6 bg-slate-50 border-t border-slate-100 space-y-4">
+        <div className="flex justify-between items-center text-slate-500 font-medium">
+          <span>Subtotal</span>
+          <span>Rp {total.toLocaleString()}</span>
+        </div>
+        <div className="flex justify-between items-center">
+          <span className="text-xl font-bold text-slate-800 font-display">TOTAL</span>
+          <span className="text-2xl font-bold text-brand-primary font-display tracking-tight">Rp {total.toLocaleString()}</span>
+        </div>
+
+        <div className="space-y-4 mt-4 pt-4 border-t border-slate-200">
+           <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-hide">
+              {[10000, 20000, 50000, 100000].map(amount => (
+                <button 
+                  key={amount}
+                  onClick={() => setCashInput((prev: string) => (parseInt(prev || '0') + amount).toString())}
+                  className="px-3 py-2 bg-white border border-slate-200 rounded-xl text-xs font-bold text-slate-600 hover:border-brand-primary hover:text-brand-primary whitespace-nowrap transition-all"
+                >
+                  +{amount.toLocaleString()}
+                </button>
+              ))}
+              <button 
+                onClick={() => setCashInput(total.toString())}
+                className="px-3 py-2 bg-brand-primary/10 border border-brand-primary/20 rounded-xl text-xs font-bold text-brand-primary whitespace-nowrap"
+              >
+                Uang Pas
+              </button>
+           </div>
+
+           <div className="relative">
+              <span className="absolute left-4 top-1/2 -translate-y-1/2 font-bold text-slate-400">Rp</span>
+              <input 
+                type="number" 
+                placeholder="Tunai..." 
+                className="w-full pl-12 pr-4 py-4 bg-white border border-slate-200 rounded-2xl focus:ring-4 focus:ring-brand-primary/10 transition-all outline-hidden font-bold text-slate-700 text-lg"
+                value={cashInput}
+                onChange={(e) => setCashInput(e.target.value)}
+              />
+           </div>
+
+           <div className="flex justify-between items-center px-2">
+              <span className="text-sm font-semibold text-slate-400">
+                {isShortage ? 'Kurang:' : 'Kembalian:'}
+              </span>
+              <span className={`font-bold ${isShortage ? 'text-brand-danger' : 'text-brand-success'}`}>
+                Rp {changeDisplay.toLocaleString()}
+              </span>
+           </div>
+        </div>
+
+        <button 
+          disabled={cart.length === 0 || isProcessing}
+          onClick={handlePayment}
+          className="w-full py-5 bg-brand-success text-white font-bold rounded-2xl shadow-xl shadow-brand-success/25 hover:bg-emerald-600 disabled:opacity-50 disabled:grayscale transition-all text-xl mt-4 active:scale-95"
+        >
+          {isProcessing ? 'MEMPROSES...' : 'BAYAR SEKARANG'}
+        </button>
+      </div>
+    </div>
+  );
+};
+
 const POSPage = () => {
   const { cart, addToCart, removeFromCart, clearCart, total } = useCart();
   const [products, setProducts] = useState<Product[]>([]);
@@ -39,10 +165,6 @@ const POSPage = () => {
   const filteredProducts = useMemo(() => {
     return products.filter(p => p.name.toLowerCase().includes(searchTerm.toLowerCase()));
   }, [products, searchTerm]);
-
-  const change = useMemo(() => {
-    return cashInput ? calculateChange(parseInt(cashInput), total) : 0;
-  }, [cashInput, total]);
 
   const handleProductSelect = (product: Product) => {
     if (product.type === 'NON-PARFUM') {
@@ -83,7 +205,7 @@ const POSPage = () => {
       await transactionService.saveTransaction({
         total,
         cash,
-        change,
+        change: cash - total,
         items: cart,
       });
       
@@ -105,110 +227,6 @@ const POSPage = () => {
       setIsProcessing(false);
     }
   };
-
-  const CartContent = () => (
-    <div className="flex flex-col h-full bg-white lg:rounded-3xl lg:border lg:border-slate-100 lg:shadow-xl overflow-hidden">
-      <div className="p-6 border-b border-slate-100 flex items-center justify-between">
-        <div className="flex items-center gap-2">
-          {showMobileCart && (
-            <button onClick={() => setShowMobileCart(false)} className="lg:hidden p-2 -ml-2 text-slate-400">
-              <ArrowLeft size={20} />
-            </button>
-          )}
-          <h3 className="text-xl font-bold text-slate-800 flex items-center gap-2 font-display">
-            <ShoppingCart size={22} className="text-brand-primary" />
-            Order List
-          </h3>
-        </div>
-        <span className="px-3 py-1 bg-slate-100 rounded-full text-xs font-bold text-slate-500">{cart.length} ITEMS</span>
-      </div>
-
-      <div className="flex-1 overflow-y-auto p-6 space-y-4">
-        {cart.length === 0 ? (
-          <div className="flex flex-col items-center justify-center h-full text-slate-300 gap-4 opacity-50">
-            <ShoppingCart size={64} strokeWidth={1} />
-            <p className="font-bold">Belum ada item</p>
-          </div>
-        ) : (
-          cart.map((item, idx) => (
-            <div key={`${item.id}-${idx}`} className="flex justify-between items-start group">
-              <div className="flex-1">
-                <h4 className="font-bold text-slate-800">{item.name}</h4>
-                <p className="text-xs text-slate-400 font-medium">
-                  {item.type === 'PARFUM' ? `${item.ml} ml` : `${item.quantity} pcs`} × Rp {item.price.toLocaleString()}
-                </p>
-              </div>
-              <div className="flex flex-col items-end gap-2">
-                <span className="font-bold text-slate-700">Rp {item.subtotal.toLocaleString()}</span>
-                <button onClick={() => removeFromCart(idx)} className="text-brand-danger lg:opacity-0 lg:group-hover:opacity-100 transition-opacity">
-                  <X size={14} />
-                </button>
-              </div>
-            </div>
-          ))
-        )}
-      </div>
-
-      <div className="p-6 bg-slate-50 border-t border-slate-100 space-y-4">
-        <div className="flex justify-between items-center text-slate-500 font-medium">
-          <span>Subtotal</span>
-          <span>Rp {total.toLocaleString()}</span>
-        </div>
-        <div className="flex justify-between items-center">
-          <span className="text-xl font-bold text-slate-800 font-display">TOTAL</span>
-          <span className="text-2xl font-bold text-brand-primary font-display tracking-tight">Rp {total.toLocaleString()}</span>
-        </div>
-
-        <div className="space-y-4 mt-4 pt-4 border-t border-slate-200">
-           <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-hide">
-              {[10000, 20000, 50000, 100000].map(amount => (
-                <button 
-                  key={amount}
-                  onClick={() => setCashInput((prev) => (parseInt(prev || '0') + amount).toString())}
-                  className="px-3 py-2 bg-white border border-slate-200 rounded-xl text-xs font-bold text-slate-600 hover:border-brand-primary hover:text-brand-primary whitespace-nowrap transition-all"
-                >
-                  +{amount.toLocaleString()}
-                </button>
-              ))}
-              <button 
-                onClick={() => setCashInput(total.toString())}
-                className="px-3 py-2 bg-brand-primary/10 border border-brand-primary/20 rounded-xl text-xs font-bold text-brand-primary whitespace-nowrap"
-              >
-                Uang Pas
-              </button>
-           </div>
-
-           <div className="relative">
-              <span className="absolute left-4 top-1/2 -translate-y-1/2 font-bold text-slate-400">Rp</span>
-              <input 
-                type="number" 
-                placeholder="Tunai..." 
-                className="w-full pl-12 pr-4 py-4 bg-white border border-slate-200 rounded-2xl focus:ring-4 focus:ring-brand-primary/10 transition-all outline-hidden font-bold text-slate-700 text-lg"
-                value={cashInput}
-                onChange={(e) => setCashInput(e.target.value)}
-              />
-           </div>
-
-           <div className="flex justify-between items-center px-2">
-              <span className="text-sm font-semibold text-slate-400">
-                {parseInt(cashInput || '0') < total ? 'Kurang:' : 'Kembalian:'}
-              </span>
-              <span className={`font-bold ${parseInt(cashInput || '0') < total ? 'text-brand-danger' : 'text-brand-success'}`}>
-                Rp {Math.abs(parseInt(cashInput || '0') - total).toLocaleString()}
-              </span>
-           </div>
-        </div>
-
-        <button 
-          disabled={cart.length === 0 || isProcessing}
-          onClick={handlePayment}
-          className="w-full py-5 bg-brand-success text-white font-bold rounded-2xl shadow-xl shadow-brand-success/25 hover:bg-emerald-600 disabled:opacity-50 disabled:grayscale transition-all text-xl mt-4 active:scale-95"
-        >
-          {isProcessing ? 'MEMPROSES...' : 'BAYAR SEKARANG'}
-        </button>
-      </div>
-    </div>
-  );
 
   return (
     <div className="grid grid-cols-12 gap-6 lg:gap-8 lg:h-[calc(100vh-100px)]">
@@ -256,7 +274,15 @@ const POSPage = () => {
 
       {/* Desktop Cart */}
       <div className="hidden lg:flex lg:col-span-4 h-full overflow-hidden">
-        <CartContent />
+        <CartContent 
+          cart={cart}
+          total={total}
+          removeFromCart={removeFromCart}
+          cashInput={cashInput}
+          setCashInput={setCashInput}
+          handlePayment={handlePayment}
+          isProcessing={isProcessing}
+        />
       </div>
 
       {/* Mobile Cart Floating Button */}
@@ -292,7 +318,17 @@ const POSPage = () => {
             transition={{ type: 'spring', damping: 25, stiffness: 200 }}
             className="lg:hidden fixed inset-0 bg-white z-[60]"
           >
-            <CartContent />
+            <CartContent 
+              cart={cart}
+              total={total}
+              removeFromCart={removeFromCart}
+              cashInput={cashInput}
+              setCashInput={setCashInput}
+              handlePayment={handlePayment}
+              isProcessing={isProcessing}
+              showMobileCart={showMobileCart}
+              setShowMobileCart={setShowMobileCart}
+            />
           </motion.div>
         )}
       </AnimatePresence>
