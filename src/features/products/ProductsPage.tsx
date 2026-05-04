@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Search, ChevronRight, Edit2, Trash2, X, Plus } from 'lucide-react';
+import { Search, ChevronRight, Edit2, Trash2, X, Plus, TrendingUp } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { toast } from 'sonner';
 import { productService } from '../../services/productService';
