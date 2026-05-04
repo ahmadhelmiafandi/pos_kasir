@@ -262,11 +262,14 @@ const POSPage = () => {
                   {p.name.charAt(0)}
                 </div>
                 <h4 className="font-bold text-slate-800 text-sm lg:text-base line-clamp-2 mb-1">{p.name}</h4>
-                <div className="flex justify-between items-center mb-2 lg:mb-3">
-                  <p className="text-slate-400 text-[10px] lg:text-xs font-semibold uppercase tracking-wider">{p.category}</p>
-                  <span className={`text-[10px] font-bold ${p.stock <= 10 ? 'text-brand-danger' : 'text-slate-400'}`}>
-                    Stok: {p.stock}
-                  </span>
+                <div className="flex justify-between items-start mb-3 h-7">
+                  <p className="text-slate-400 text-[10px] font-bold uppercase tracking-widest">{p.category}</p>
+                  <div className="flex flex-col items-end">
+                    <span className="text-[8px] text-slate-300 font-bold uppercase leading-none mb-0.5">Stok</span>
+                    <span className={`text-xs font-black leading-none ${p.stock <= 10 ? 'text-brand-danger' : 'text-slate-500'}`}>
+                      {p.stock}
+                    </span>
+                  </div>
                 </div>
                 <p className="mt-auto font-display font-bold text-brand-primary text-base lg:text-lg">
                   Rp {p.price.toLocaleString()}
