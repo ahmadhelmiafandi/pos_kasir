@@ -11,6 +11,7 @@ import LoginPage from './features/auth/LoginPage';
 import DashboardPage from './features/dashboard/DashboardPage';
 import POSPage from './features/pos/POSPage';
 import ProductsPage from './features/products/ProductsPage';
+import UsersPage from './features/users/UsersPage';
 
 const ProtectedRoute = ({ children, allowedRoles }: { children: React.ReactNode, allowedRoles?: string[] }) => {
   const { isAuthenticated, user } = useAuthStore();
@@ -68,6 +69,14 @@ export default function App() {
           element={
             <ProtectedRoute allowedRoles={['ADMIN']}>
               <ProductsPage />
+            </ProtectedRoute>
+          } 
+        />
+        <Route 
+          path="/users" 
+          element={
+            <ProtectedRoute allowedRoles={['ADMIN']}>
+              <UsersPage />
             </ProtectedRoute>
           } 
         />

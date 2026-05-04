@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { LayoutDashboard, ShoppingCart, Package, LogOut, ChevronRight, Menu, X } from 'lucide-react';
+import { LayoutDashboard, ShoppingCart, Package, Users, LogOut, ChevronRight, Menu, X } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { useAuthStore } from '../features/auth/store';
 
@@ -11,9 +11,10 @@ const Sidebar = () => {
   const [isOpen, setIsOpen] = useState(false);
   
   const menuItems = [
-    { icon: LayoutDashboard, label: 'Dashboard', path: '/dashboard', roles: ['ADMIN'] },
-    { icon: ShoppingCart, label: 'Kasir', path: '/pos', roles: ['ADMIN', 'KASIR'] },
-    { icon: Package, label: 'Produk', path: '/products', roles: ['ADMIN'] },
+    { path: '/dashboard', label: 'Dashboard', icon: LayoutDashboard, roles: ['ADMIN'] },
+    { path: '/products', label: 'Produk', icon: Package, roles: ['ADMIN'] },
+    { path: '/users', label: 'Kelola Akun', icon: Users, roles: ['ADMIN'] },
+    { path: '/pos', label: 'Kasir (POS)', icon: ShoppingCart, roles: ['ADMIN', 'KASIR'] },
   ];
 
   const filteredMenuItems = menuItems.filter(item => 

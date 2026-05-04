@@ -4,7 +4,7 @@ import { User } from '../../types/index';
 interface AuthState {
   user: User | null;
   isAuthenticated: boolean;
-  login: (email: string, role: 'ADMIN' | 'KASIR') => void;
+  login: (user: User) => void;
   logout: () => void;
 }
 
@@ -15,8 +15,7 @@ export const useAuthStore = create<AuthState>((set) => ({
   })(),
   isAuthenticated: !!localStorage.getItem('agmal_pos_user'),
   
-  login: (email, role) => {
-    const user: User = { email, role };
+  login: (user) => {
     localStorage.setItem('agmal_pos_user', JSON.stringify(user));
     set({ user, isAuthenticated: true });
   },

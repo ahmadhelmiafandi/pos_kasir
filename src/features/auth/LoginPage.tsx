@@ -3,31 +3,37 @@ import { useNavigate } from 'react-router-dom';
 import { motion } from 'motion/react';
 import { useAuthStore } from './store';
 import { toast } from 'sonner';
+import { userService } from '../../services/userService';
 
 const LoginPage = () => {
-  const { login } = useAuthStore();
-  const navigate = useNavigate();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [error, setError] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
+  const login = useAuthStore((state) => state.login);
+  const navigate = useNavigate();
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (email && password) {
-      if (email === 'admin@agmal.com' && password === 'admin123') {
-        login(email, 'ADMIN');
-        toast.success('Login Admin berhasil!');
-        navigate('/dashboard');
-      } else if (email === 'kasir@agmal.com' && password === 'kasir123') {
-        login(email, 'KASIR');
-        toast.success('Login Kasir berhasil!');
-        navigate('/pos');
+    setIsLoading(true);
+    
+    try {
+      const user = await userService.login(email, password);
+      
+      if (user) {
+        login({
+          email: user.email,
+          name: user.name,
+          role: user.role as 'ADMIN' | 'KASIR',
+        });
+        toast.success(`Selamat datang, ${user.name}!`);
+        navigate(user.role === 'ADMIN' ? '/dashboard' : '/pos');
       } else {
-        setError('Email atau Password salah!');
-        toast.error('Login gagal!');
+        toast.error('Email atau password salah');
       }
-    } else {
-      setError('Harap isi semua field!');
+    } catch (error) {
+      toast.error('Terjadi kesalahan sistem');
+    } finally {
+      setIsLoading(false);
     }
   };
 
