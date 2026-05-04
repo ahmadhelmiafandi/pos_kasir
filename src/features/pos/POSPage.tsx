@@ -1,85 +1,118 @@
-import React, { useState, useEffect, useRef, useMemo } from 'react';
-import { Search, ShoppingCart, X, ChevronRight, ArrowLeft } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { Search, ShoppingCart, Trash2, CheckCircle, X, ChevronRight, Calculator, User, QrCode } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
-import { toast } from 'sonner';
-import { useCart } from './hooks/useCart';
+import { usePOSStore } from './store';
 import { productService } from '../../services/productService';
-import { Product } from '../../types/index';
-import { calculateChange, validatePayment } from './utils';
 import { transactionService } from '../../services/transactionService';
+import { memberService } from '../../services/memberService';
+import { toast } from 'sonner';
+import { Product, CartItem } from '../../types/index';
+import { Html5QrcodeScanner } from 'html5-qrcode';
 
-// Separate CartContent component to avoid focus loss on re-render
+// Sub-component for Cart Content to prevent re-renders on every input
 const CartContent = ({ 
   cart, 
+  onRemove, 
+  onUpdateQty, 
   total, 
-  removeFromCart, 
   cashInput, 
   setCashInput, 
-  handlePayment, 
-  isProcessing, 
-  showMobileCart, 
-  setShowMobileCart 
+  onCheckout,
+  selectedMember,
+  onClearMember
 }: any) => {
-  const changeDisplay = useMemo(() => {
-    const cash = parseInt(cashInput || '0');
-    return Math.abs(cash - total);
-  }, [cashInput, total]);
-
-  const isShortage = useMemo(() => {
-    return parseInt(cashInput || '0') < total;
-  }, [cashInput, total]);
+  const cash = parseFloat(cashInput || '0');
+  const change = cash - total;
+  const isShort = cash < total;
 
   return (
-    <div className="flex flex-col h-full bg-white lg:rounded-3xl lg:border lg:border-slate-100 lg:shadow-xl overflow-hidden">
-      <div className="p-6 border-b border-slate-100 flex items-center justify-between">
-        <div className="flex items-center gap-2">
-          {showMobileCart && (
-            <button onClick={() => setShowMobileCart(false)} className="lg:hidden p-2 -ml-2 text-slate-400">
-              <ArrowLeft size={20} />
-            </button>
-          )}
-          <h3 className="text-xl font-bold text-slate-800 flex items-center gap-2 font-display">
-            <ShoppingCart size={22} className="text-brand-primary" />
-            Order List
-          </h3>
-        </div>
-        <span className="px-3 py-1 bg-slate-100 rounded-full text-xs font-bold text-slate-500">{cart.length} ITEMS</span>
+    <div className="h-full flex flex-col p-6">
+      <div className="flex items-center justify-between mb-6">
+        <h3 className="text-xl font-bold text-slate-800 flex items-center gap-2">
+          <ShoppingCart size={24} className="text-brand-primary" />
+          Keranjang Belanja
+        </h3>
+        <span className="px-3 py-1 bg-slate-100 rounded-full text-xs font-bold text-slate-500">
+          {cart.length} Item
+        </span>
       </div>
 
-      <div className="flex-1 overflow-y-auto p-6 space-y-4">
+      {/* Member Info in Cart */}
+      {selectedMember && (
+        <div className="mb-4 p-3 bg-brand-primary/5 border border-brand-primary/20 rounded-2xl flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <div className="w-8 h-8 bg-brand-primary rounded-lg flex items-center justify-center text-white">
+              <User size={16} />
+            </div>
+            <div>
+              <p className="text-xs font-bold text-slate-800">{selectedMember.name}</p>
+              <p className="text-[10px] text-brand-primary font-bold">
+                Transaksi Ke-{selectedMember.total_transactions + 1}
+                {(selectedMember.total_transactions + 1) % 10 === 0 && " (GRATIS ISI ULANG!)"}
+              </p>
+            </div>
+          </div>
+          <button onClick={onClearMember} className="text-slate-400 hover:text-brand-danger">
+            <X size={16} />
+          </button>
+        </div>
+      )}
+
+      <div className="flex-1 overflow-y-auto space-y-4 pr-2 custom-scrollbar">
         {cart.length === 0 ? (
-          <div className="flex flex-col items-center justify-center h-full text-slate-300 gap-4 opacity-50">
-            <ShoppingCart size={64} strokeWidth={1} />
-            <p className="font-bold">Belum ada item</p>
+          <div className="h-full flex flex-col items-center justify-center text-slate-300 opacity-50">
+            <ShoppingCart size={64} strokeWidth={1.5} />
+            <p className="mt-4 font-medium">Keranjang masih kosong</p>
           </div>
         ) : (
-          cart.map((item: any, idx: number) => (
-            <div key={`${item.id}-${idx}`} className="flex justify-between items-start group">
-              <div className="flex-1">
-                <h4 className="font-bold text-slate-800">{item.name}</h4>
-                <p className="text-xs text-slate-400 font-medium">
-                  {item.type === 'PARFUM' ? `${item.ml} ml` : `${item.quantity} pcs`} × Rp {item.price.toLocaleString()}
-                </p>
+          cart.map((item: CartItem) => (
+            <motion.div 
+              layout
+              initial={{ opacity: 0, x: 20 }}
+              animate={{ opacity: 1, x: 0 }}
+              key={item.id} 
+              className="flex items-center gap-4 bg-slate-50 p-4 rounded-2xl border border-slate-100 group"
+            >
+              <div className="flex-1 min-w-0">
+                <p className="font-bold text-slate-700 truncate">{item.name}</p>
+                <p className="text-xs text-slate-400 font-medium">Rp {item.price.toLocaleString()} / {item.type === 'PARFUM' ? 'ml' : 'pcs'}</p>
               </div>
-              <div className="flex flex-col items-end gap-2">
-                <span className="font-bold text-slate-700">Rp {item.subtotal.toLocaleString()}</span>
-                <button onClick={() => removeFromCart(idx)} className="text-brand-danger lg:opacity-0 lg:group-hover:opacity-100 transition-opacity">
-                  <X size={14} />
+              <div className="flex items-center gap-3">
+                <input 
+                  type="number"
+                  value={item.quantity}
+                  onChange={(e) => onUpdateQty(item.id, parseFloat(e.target.value))}
+                  onWheel={(e) => (e.target as HTMLInputElement).blur()}
+                  className="w-16 px-2 py-1 bg-white border border-slate-200 rounded-lg text-center font-bold text-slate-700 outline-hidden focus:border-brand-primary transition-colors"
+                />
+                <button 
+                  onClick={() => onRemove(item.id)}
+                  className="p-2 text-slate-400 hover:text-brand-danger hover:bg-red-50 rounded-xl transition-all"
+                >
+                  <Trash2 size={18} />
                 </button>
               </div>
-            </div>
+            </motion.div>
           ))
         )}
       </div>
 
-      <div className="p-6 bg-slate-50 border-t border-slate-100 space-y-4">
-        <div className="flex justify-between items-center text-slate-500 font-medium">
-          <span>Subtotal</span>
-          <span>Rp {total.toLocaleString()}</span>
-        </div>
-        <div className="flex justify-between items-center">
-          <span className="text-xl font-bold text-slate-800 font-display">TOTAL</span>
-          <span className="text-2xl font-bold text-brand-primary font-display tracking-tight">Rp {total.toLocaleString()}</span>
+      <div className="mt-6 pt-6 border-t-2 border-dashed border-slate-100">
+        <div className="space-y-3 mb-6">
+          <div className="flex justify-between items-center text-slate-500">
+            <span className="font-medium">Subtotal</span>
+            <span className="font-bold">Rp {total.toLocaleString()}</span>
+          </div>
+          {(selectedMember?.total_transactions + 1) % 10 === 0 && (
+            <div className="flex justify-between items-center text-brand-success font-bold">
+              <span>Promo Member (Free 1 Refill)</span>
+              <span>Terdeteksi!</span>
+            </div>
+          )}
+          <div className="flex justify-between items-center">
+            <span className="text-lg font-bold text-slate-800">Total Akhir</span>
+            <span className="text-3xl font-black text-brand-primary font-display">Rp {total.toLocaleString()}</span>
+          </div>
         </div>
 
         <div className="space-y-4 mt-4 pt-4 border-t border-slate-200">
@@ -93,7 +126,7 @@ const CartContent = ({
            </div>
 
            <div className="relative">
-              <span className="absolute left-4 top-1/2 -translate-y-1/2 font-bold text-slate-400">Rp</span>
+              <Calculator className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={20} />
               <input 
                 type="number" 
                 placeholder="Tunai..." 
@@ -104,272 +137,288 @@ const CartContent = ({
               />
            </div>
 
-           <div className="flex justify-between items-center px-2">
-              <span className="text-sm font-semibold text-slate-400">
-                {isShortage ? 'Kurang:' : 'Kembalian:'}
-              </span>
-              <span className={`font-bold ${isShortage ? 'text-brand-danger' : 'text-brand-success'}`}>
-                Rp {changeDisplay.toLocaleString()}
-              </span>
-           </div>
-        </div>
+           {cash > 0 && (
+             <div className={`p-4 rounded-2xl flex justify-between items-center ${isShort ? 'bg-red-50 text-brand-danger border border-red-100' : 'bg-emerald-50 text-brand-success border border-emerald-100'}`}>
+                <span className="font-bold text-sm">{isShort ? 'Kurang Bayar' : 'Kembalian'}</span>
+                <span className="text-xl font-black">Rp {Math.abs(change).toLocaleString()}</span>
+             </div>
+           )}
 
-        <button 
-          disabled={cart.length === 0 || isProcessing}
-          onClick={handlePayment}
-          className="w-full py-5 bg-brand-success text-white font-bold rounded-2xl shadow-xl shadow-brand-success/25 hover:bg-emerald-600 disabled:opacity-50 disabled:grayscale transition-all text-xl mt-4 active:scale-95"
-        >
-          {isProcessing ? 'MEMPROSES...' : 'BAYAR SEKARANG'}
-        </button>
+           <button 
+            disabled={cart.length === 0 || isShort}
+            onClick={onCheckout}
+            className={`w-full py-5 rounded-2xl font-black text-xl shadow-xl transition-all active:scale-[0.98] flex items-center justify-center gap-3 ${cart.length === 0 || isShort ? 'bg-slate-100 text-slate-400 cursor-not-allowed shadow-none' : 'bg-brand-primary text-white shadow-brand-primary/30 hover:bg-sky-600'}`}
+           >
+            <CheckCircle size={24} />
+            SELESAIKAN TRANSAKSI
+           </button>
+        </div>
       </div>
     </div>
   );
 };
 
 const POSPage = () => {
-  const { cart, addToCart, removeFromCart, clearCart, total } = useCart();
+  const { cart, addToCart, removeFromCart, updateQuantity, clearCart, total } = usePOSStore();
   const [products, setProducts] = useState<Product[]>([]);
   const [searchTerm, setSearchTerm] = useState('');
-  const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
-  const [mlInput, setMlInput] = useState('');
-  const [qtyInput, setQtyInput] = useState('1');
+  const [selectedCategory, setSelectedCategory] = useState('Semua');
+  const [isLoading, setIsLoading] = useState(true);
   const [cashInput, setCashInput] = useState('');
-  const [isProcessing, setIsProcessing] = useState(false);
-  const [showMobileCart, setShowMobileCart] = useState(false);
+  
+  // Member States
+  const [isScannerOpen, setIsScannerOpen] = useState(false);
+  const [selectedMember, setSelectedMember] = useState<any>(null);
 
-  const searchRef = useRef<HTMLInputElement>(null);
+  const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
+  const [qtyInput, setQtyInput] = useState('1');
+  const [mlInput, setMlInput] = useState('');
+
+  const fetchProducts = async () => {
+    setIsLoading(true);
+    try {
+      const data = await productService.getAll();
+      setProducts(data);
+    } catch (err) {
+      toast.error('Gagal mengambil data produk');
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   useEffect(() => {
-    const fetchProducts = async () => {
-      try {
-        const data = await productService.getAll();
-        setProducts(data);
-      } catch (error) {
-        toast.error('Gagal mengambil data produk');
-      }
-    };
     fetchProducts();
-    if (window.innerWidth > 1024) {
-      searchRef.current?.focus();
-    }
   }, []);
 
-  const filteredProducts = useMemo(() => {
-    return products.filter(p => p.name.toLowerCase().includes(searchTerm.toLowerCase()));
-  }, [products, searchTerm]);
+  // Handle QR Scanner
+  useEffect(() => {
+    let scanner: any = null;
+    if (isScannerOpen) {
+      scanner = new Html5QrcodeScanner("reader", { fps: 10, qrbox: 250 }, false);
+      scanner.render(async (decodedText: string) => {
+        try {
+          const member = await memberService.getById(decodedText);
+          if (member) {
+            setSelectedMember(member);
+            toast.success(`Member: ${member.name} terdeteksi!`);
+            setIsScannerOpen(false);
+            scanner.clear();
+          } else {
+            toast.error("QR Code tidak valid");
+          }
+        } catch (e) {
+          toast.error("Gagal membaca member");
+        }
+      }, (err: any) => {});
+    }
+    return () => { if (scanner) scanner.clear(); };
+  }, [isScannerOpen]);
 
   const handleProductSelect = (product: Product) => {
-    if (product.type === 'NON-PARFUM') {
-      addToCart(product, 1);
-    } else {
-      setSelectedProduct(product);
-      setMlInput('');
-    }
+    setSelectedProduct(product);
+    setQtyInput('1');
+    setMlInput('');
   };
 
   const handleAddToCartModal = () => {
     if (!selectedProduct) return;
     
-    const amount = selectedProduct.type === 'PARFUM' ? parseFloat(mlInput) : parseInt(qtyInput);
-    addToCart(selectedProduct, amount);
-    
-    setSelectedProduct(null);
-    setSearchTerm('');
-    if (window.innerWidth > 1024) {
-      searchRef.current?.focus();
+    const qty = selectedProduct.type === 'PARFUM' ? parseFloat(mlInput) : parseInt(qtyInput);
+    if (!qty || qty <= 0) {
+      toast.error('Jumlah tidak valid');
+      return;
     }
+
+    addToCart(selectedProduct, qty);
+    setSelectedProduct(null);
+    toast.success(`${selectedProduct.name} ditambahkan`);
   };
 
-  const handlePayment = async () => {
-    if (cart.length === 0) {
-      toast.error('Keranjang masih kosong');
-      return;
-    }
-
-    const cash = parseInt(cashInput);
-    if (!cashInput || !validatePayment(cash, total)) {
-      toast.error('Uang tunai tidak mencukupi');
-      return;
-    }
-
-    setIsProcessing(true);
+  const handleCheckout = async () => {
+    if (cart.length === 0) return;
+    
     try {
-      await transactionService.saveTransaction({
-        total,
-        cash,
-        change: cash - total,
+      const transactionData = {
+        total_amount: total,
+        payment_method: 'CASH',
+        cash_amount: parseFloat(cashInput),
+        change_amount: parseFloat(cashInput) - total,
         items: cart,
-      });
+        member_id: selectedMember?.id || null
+      };
+
+      await transactionService.create(transactionData);
       
+      // Update member transaction count if applicable
+      if (selectedMember) {
+        // Find total ml purchased in this cart
+        const totalMl = cart.reduce((acc, item) => item.type === 'PARFUM' ? acc + item.quantity : acc, 0);
+        await memberService.incrementTransaction(selectedMember.id, totalMl);
+      }
+
       toast.success('Transaksi Berhasil!');
       clearCart();
       setCashInput('');
-      setShowMobileCart(false);
-      
-      const updatedProducts = await productService.getAll();
-      setProducts(updatedProducts);
-      
-      if (window.innerWidth > 1024) {
-        searchRef.current?.focus();
-      }
-    } catch (error) {
-      console.error('Payment error:', error);
+      setSelectedMember(null);
+      fetchProducts(); // Refresh stocks
+    } catch (err) {
       toast.error('Gagal memproses transaksi');
-    } finally {
-      setIsProcessing(false);
     }
   };
 
+  const filtered = products.filter(p => {
+    const matchesSearch = p.name.toLowerCase().includes(searchTerm.toLowerCase());
+    const matchesCategory = selectedCategory === 'Semua' || p.category === selectedCategory;
+    return matchesSearch && matchesCategory;
+  });
+
+  const categories = ['Semua', ...new Set(products.map(p => p.category).filter(Boolean))];
+
   return (
-    <div className="grid grid-cols-12 gap-6 lg:gap-8 lg:h-[calc(100vh-100px)]">
-      {/* Product Area */}
-      <div className="col-span-12 lg:col-span-8 flex flex-col gap-6 overflow-hidden">
-        <div className="relative">
-          <Search className="absolute left-6 top-1/2 -translate-y-1/2 text-slate-400" size={24} />
-          <input 
-            ref={searchRef}
-            placeholder="Cari produk..." 
-            className="w-full pl-16 pr-6 py-5 lg:py-6 bg-white border-2 border-transparent focus:border-brand-primary outline-hidden rounded-3xl text-lg lg:text-xl font-medium shadow-sm transition-all"
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            onKeyDown={(e) => {
-              if (e.key === 'Enter' && filteredProducts.length > 0) {
-                handleProductSelect(filteredProducts[0]);
-              }
-            }}
-          />
+    <div className="flex flex-col lg:flex-row h-[calc(100vh-6rem)] gap-6 overflow-hidden">
+      {/* Left: Product List */}
+      <div className="flex-1 flex flex-col min-w-0">
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6">
+          <div>
+            <h2 className="text-2xl lg:text-3xl font-bold text-slate-800 font-display">Kasir Pintar</h2>
+            <p className="text-slate-400 text-sm">Pilih produk untuk mulai transaksi</p>
+          </div>
+          
+          <div className="flex gap-2">
+            <button 
+              onClick={() => setIsScannerOpen(true)}
+              className="px-5 py-3 bg-white border border-slate-200 rounded-2xl flex items-center gap-2 font-bold text-slate-600 hover:border-brand-primary hover:text-brand-primary transition-all shadow-sm"
+            >
+              <QrCode size={20} />
+              Scan Member
+            </button>
+          </div>
         </div>
 
-        <div className="flex-1 overflow-y-auto pr-2">
-          <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-3 lg:gap-4 pb-24 lg:pb-8">
-            {filteredProducts.map(p => (
-              <motion.button
-                layout
-                key={p.id}
-                onClick={() => handleProductSelect(p)}
-                className="bg-white p-4 lg:p-5 rounded-3xl border border-slate-100 shadow-sm hover:shadow-lg hover:border-brand-primary/20 transition-all text-left flex flex-col group active:scale-95 relative overflow-hidden"
+        <div className="flex flex-col md:flex-row gap-4 mb-6">
+          <div className="relative flex-1">
+            <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={20} />
+            <input 
+              placeholder="Cari produk..." 
+              className="w-full pl-12 pr-4 py-4 bg-white border border-slate-200 rounded-2xl focus:ring-4 focus:ring-brand-primary/10 transition-all outline-hidden font-medium"
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+            />
+          </div>
+          <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-hide no-wrap">
+            {categories.map(cat => (
+              <button 
+                key={cat}
+                onClick={() => setSelectedCategory(cat)}
+                className={`px-6 py-4 rounded-2xl font-bold transition-all whitespace-nowrap shadow-sm border ${selectedCategory === cat ? 'bg-brand-primary text-white border-brand-primary' : 'bg-white text-slate-500 border-slate-100 hover:border-brand-primary/30'}`}
               >
-                {/* Stock Badge */}
-                <div className={`absolute top-0 right-0 px-3 py-1 rounded-bl-2xl font-bold text-[10px] uppercase ${p.stock <= 10 ? 'bg-brand-danger text-white' : 'bg-slate-100 text-slate-500'}`}>
-                  {p.stock}
-                </div>
-
-                <div className="w-10 h-10 lg:w-12 lg:h-12 bg-slate-50 rounded-2xl flex items-center justify-center text-brand-primary font-bold text-lg lg:text-xl italic mb-3 lg:mb-4 group-hover:bg-brand-primary group-hover:text-white transition-colors">
-                  {p.name.charAt(0)}
-                </div>
-                <h4 className="font-bold text-slate-800 text-sm lg:text-base line-clamp-2 mb-1 pr-6">{p.name}</h4>
-                <p className="text-slate-400 text-[10px] font-bold uppercase tracking-widest mb-2 lg:mb-3">{p.category}</p>
-                <p className="mt-auto font-display font-bold text-brand-primary text-base lg:text-lg">
-                  Rp {p.price.toLocaleString()}
-                  <span className="text-[10px] lg:text-xs text-slate-400 font-sans ml-1">{p.type === 'PARFUM' ? '/ml' : '/pcs'}</span>
-                </p>
-              </motion.button>
+                {cat}
+              </button>
             ))}
           </div>
         </div>
+
+        <div className="flex-1 overflow-y-auto pr-2 custom-scrollbar">
+          {isLoading ? (
+            <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-4 lg:gap-6">
+              {[1,2,3,4,5,6,7,8].map(i => <div key={i} className="aspect-[3/4] bg-slate-100 rounded-3xl animate-pulse" />)}
+            </div>
+          ) : (
+            <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-4 lg:gap-6 pb-6">
+              {filtered.map(p => (
+                <motion.button
+                  layout
+                  key={p.id}
+                  onClick={() => handleProductSelect(p)}
+                  className="bg-white p-4 lg:p-5 rounded-3xl border border-slate-100 shadow-sm hover:shadow-lg hover:border-brand-primary/20 transition-all text-left flex flex-col group active:scale-95 relative overflow-hidden"
+                >
+                  {/* Stock Badge */}
+                  <div className={`absolute top-0 right-0 px-3 py-1 rounded-bl-2xl font-bold text-[10px] uppercase ${p.stock <= 10 ? 'bg-brand-danger text-white' : 'bg-slate-100 text-slate-500'}`}>
+                    {p.stock}
+                  </div>
+
+                  <div className="w-10 h-10 lg:w-12 lg:h-12 bg-slate-50 rounded-2xl flex items-center justify-center text-brand-primary font-bold text-lg lg:text-xl italic mb-3 lg:mb-4 group-hover:bg-brand-primary group-hover:text-white transition-colors">
+                    {p.name.charAt(0)}
+                  </div>
+                  <h4 className="font-bold text-slate-800 text-sm lg:text-base line-clamp-2 mb-1 pr-6">{p.name}</h4>
+                  <p className="text-slate-400 text-[10px] font-bold uppercase tracking-widest mb-2 lg:mb-3">{p.category}</p>
+                  <p className="mt-auto font-display font-bold text-brand-primary text-base lg:text-lg">
+                    Rp {p.price.toLocaleString()}
+                    <span className="text-[10px] lg:text-xs text-slate-400 font-sans ml-1">{p.type === 'PARFUM' ? '/ml' : '/pcs'}</span>
+                  </p>
+                </motion.button>
+              ))}
+            </div>
+          )}
+        </div>
       </div>
 
-      {/* Desktop Cart */}
-      <div className="hidden lg:flex lg:col-span-4 h-full overflow-hidden">
+      {/* Right: Checkout Sidebar */}
+      <div className="w-full lg:w-[400px] bg-white rounded-3xl border border-slate-100 shadow-sm overflow-hidden flex flex-col">
         <CartContent 
           cart={cart}
+          onRemove={removeFromCart}
+          onUpdateQty={updateQuantity}
           total={total}
-          removeFromCart={removeFromCart}
           cashInput={cashInput}
           setCashInput={setCashInput}
-          handlePayment={handlePayment}
-          isProcessing={isProcessing}
+          onCheckout={handleCheckout}
+          selectedMember={selectedMember}
+          onClearMember={() => setSelectedMember(null)}
         />
       </div>
 
-      {/* Mobile Cart Floating Button */}
-      {cart.length > 0 && !showMobileCart && (
-        <motion.div 
-          initial={{ y: 100 }}
-          animate={{ y: 0 }}
-          className="lg:hidden fixed bottom-6 left-6 right-6 z-30"
-        >
-          <button 
-            onClick={() => setShowMobileCart(true)}
-            className="w-full py-4 bg-brand-primary text-white font-bold rounded-2xl shadow-2xl flex items-center justify-between px-6 active:scale-95 transition-transform"
-          >
-            <div className="flex items-center gap-3">
-              <ShoppingCart size={24} />
-              <span>{cart.length} Item</span>
-            </div>
-            <div className="flex items-center gap-2">
-              <span className="font-display">Rp {total.toLocaleString()}</span>
-              <ChevronRight size={20} />
-            </div>
-          </button>
-        </motion.div>
-      )}
-
-      {/* Mobile Cart Fullscreen */}
+      {/* Modal QR Scanner */}
       <AnimatePresence>
-        {showMobileCart && (
-          <motion.div 
-            initial={{ y: '100%' }}
-            animate={{ y: 0 }}
-            exit={{ y: '100%' }}
-            transition={{ type: 'spring', damping: 25, stiffness: 200 }}
-            className="lg:hidden fixed inset-0 bg-white z-[60]"
-          >
-            <CartContent 
-              cart={cart}
-              total={total}
-              removeFromCart={removeFromCart}
-              cashInput={cashInput}
-              setCashInput={setCashInput}
-              handlePayment={handlePayment}
-              isProcessing={isProcessing}
-              showMobileCart={showMobileCart}
-              setShowMobileCart={setShowMobileCart}
+        {isScannerOpen && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+            <motion.div 
+              initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+              className="absolute inset-0 bg-slate-900/80 backdrop-blur-sm"
+              onClick={() => setIsScannerOpen(false)}
             />
-          </motion.div>
+            <motion.div 
+              initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.9 }}
+              className="relative w-full max-w-md bg-white rounded-3xl shadow-2xl p-6 overflow-hidden"
+            >
+              <div className="flex justify-between items-center mb-4">
+                <h3 className="text-xl font-bold text-slate-800">Scan QR Member</h3>
+                <button onClick={() => setIsScannerOpen(false)} className="p-2 hover:bg-slate-100 rounded-full">
+                  <X size={24} className="text-slate-400" />
+                </button>
+              </div>
+              <div id="reader" className="w-full rounded-2xl overflow-hidden border border-slate-100" />
+              <p className="mt-4 text-center text-sm text-slate-400 font-medium">Arahkan kamera ke QR Member pelanggan</p>
+            </motion.div>
+          </div>
         )}
       </AnimatePresence>
 
-      {/* Modal for Product Details */}
+      {/* Modal Add to Cart (Qty/Ml Selection) */}
       <AnimatePresence>
         {selectedProduct && (
-          <div className="fixed inset-0 z-[70] flex items-center justify-center p-4">
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
             <motion.div 
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
+              initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
               className="absolute inset-0 bg-slate-900/60 backdrop-blur-sm"
               onClick={() => setSelectedProduct(null)}
             />
             <motion.div 
-              initial={{ opacity: 0, scale: 0.9, y: 20 }}
-              animate={{ opacity: 1, scale: 1, y: 0 }}
-              exit={{ opacity: 0, scale: 0.9, y: 20 }}
-              className="relative w-full max-w-md bg-white rounded-3xl shadow-2xl p-6 lg:p-8"
+              initial={{ opacity: 0, scale: 0.9, y: 20 }} animate={{ opacity: 1, scale: 1, y: 0 }} exit={{ opacity: 0, scale: 0.9, y: 20 }}
+              className="relative w-full max-w-sm bg-white rounded-3xl shadow-2xl p-8"
             >
-              <button 
-                onClick={() => setSelectedProduct(null)}
-                className="absolute top-6 right-6 text-slate-300 hover:text-slate-600 transition-colors"
-              >
-                <X size={24} />
-              </button>
-
-              <div className="flex flex-col items-center text-center">
-                <div className="w-16 h-16 lg:w-20 lg:h-20 bg-brand-primary/10 text-brand-primary rounded-3xl flex items-center justify-center text-2xl lg:text-3xl font-bold mb-4 italic">
+              <div className="text-center mb-8">
+                <div className="w-16 h-16 bg-slate-50 rounded-2xl flex items-center justify-center text-brand-primary font-bold text-2xl italic mx-auto mb-4">
                   {selectedProduct.name.charAt(0)}
                 </div>
-                <h3 className="text-xl lg:text-2xl font-bold text-slate-800 font-display">{selectedProduct.name}</h3>
-                <p className="text-slate-400 uppercase text-[10px] lg:text-xs font-bold tracking-widest mt-1">{selectedProduct.category}</p>
-                <div className="bg-slate-50 px-4 py-2 rounded-full mt-4 flex items-center gap-2">
-                  <span className="text-slate-500 font-medium text-xs lg:text-sm">Harga:</span>
-                  <span className="text-brand-primary font-bold text-sm lg:text-base">Rp {selectedProduct.price.toLocaleString()}{selectedProduct.type === 'PARFUM' ? '/ml' : '/pcs'}</span>
-                </div>
+                <h3 className="text-2xl font-bold text-slate-800 font-display">{selectedProduct.name}</h3>
+                <p className="text-slate-400 font-medium">Tentukan jumlah pembelian</p>
               </div>
 
-              <div className="mt-6 lg:mt-8 space-y-6">
-                <div className="space-y-3">
-                  <label className="text-sm font-bold text-slate-700 ml-1">
-                    {selectedProduct.type === 'PARFUM' ? 'Jumlah (ml)' : 'Kuantitas'}
+              <div className="space-y-6">
+                <div className="space-y-3 text-center">
+                  <label className="text-sm font-bold text-slate-500 uppercase tracking-widest">
+                    Jumlah ({selectedProduct.type === 'PARFUM' ? 'ml' : 'pcs'})
                   </label>
                   <input 
                     autoFocus
@@ -381,19 +430,28 @@ const POSPage = () => {
                     className="w-full px-6 py-4 lg:py-5 bg-slate-50 border border-slate-100 rounded-2xl focus:ring-4 focus:ring-brand-primary/10 transition-all outline-hidden text-center text-xl lg:text-2xl font-bold text-slate-800"
                     placeholder="0"
                   />
-                  {selectedProduct.type === 'PARFUM' && mlInput && (
-                    <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="text-center">
-                      <p className="text-slate-400 text-[10px] lg:text-sm">Total Harga Item:</p>
-                      <p className="text-xl lg:text-2xl font-bold text-slate-800">Rp {(parseFloat(mlInput) * selectedProduct.price).toLocaleString()}</p>
-                    </motion.div>
-                  )}
+                  <div className="grid grid-cols-3 gap-2 mt-2">
+                    {selectedProduct.type === 'PARFUM' ? (
+                      ['15', '30', '50'].map(v => (
+                        <button key={v} onClick={() => setMlInput(v)} className="py-2 bg-slate-50 text-slate-600 rounded-xl text-sm font-bold hover:bg-brand-primary/10 hover:text-brand-primary transition-all border border-slate-100">
+                          {v} ml
+                        </button>
+                      ))
+                    ) : (
+                      ['1', '2', '5'].map(v => (
+                        <button key={v} onClick={() => setQtyInput(v)} className="py-2 bg-slate-50 text-slate-600 rounded-xl text-sm font-bold hover:bg-brand-primary/10 hover:text-brand-primary transition-all border border-slate-100">
+                          {v} pcs
+                        </button>
+                      ))
+                    )}
+                  </div>
                 </div>
 
                 <button 
                   onClick={handleAddToCartModal}
-                  className="w-full py-4 lg:py-5 bg-brand-primary text-white font-bold rounded-2xl shadow-xl shadow-brand-primary/25 hover:bg-sky-600 transition-all text-lg lg:text-xl"
+                  className="w-full py-4 bg-brand-primary text-white font-bold rounded-2xl shadow-xl shadow-brand-primary/25 hover:bg-sky-600 transition-all text-lg active:scale-[0.98]"
                 >
-                  Tambah
+                  Masukkan Keranjang
                 </button>
               </div>
             </motion.div>

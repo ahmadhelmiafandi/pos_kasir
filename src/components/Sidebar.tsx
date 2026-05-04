@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { LayoutDashboard, ShoppingCart, Package, Users, LogOut, ChevronRight, Menu, X } from 'lucide-react';
+import { LayoutDashboard, ShoppingCart, Package, Users, LogOut, ChevronRight, Menu, X, QrCode } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { useAuthStore } from '../features/auth/store';
 
@@ -14,6 +14,7 @@ const Sidebar = () => {
     { path: '/dashboard', label: 'Dashboard', icon: LayoutDashboard, roles: ['ADMIN'] },
     { path: '/products', label: 'Produk', icon: Package, roles: ['ADMIN'] },
     { path: '/users', label: 'Kelola Akun', icon: Users, roles: ['ADMIN'] },
+    { path: '/members', label: 'Member QR', icon: QrCode, roles: ['ADMIN', 'KASIR'] },
     { path: '/pos', label: 'Kasir (POS)', icon: ShoppingCart, roles: ['ADMIN', 'KASIR'] },
   ];
 
