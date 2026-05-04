@@ -317,6 +317,7 @@ const ProductsPage = () => {
                     <input 
                       type="number" required value={formData.price}
                       onChange={e => setFormData({...formData, price: parseInt(e.target.value)})}
+                      onWheel={(e) => (e.target as HTMLInputElement).blur()}
                       className="w-full px-5 py-3 bg-slate-50 border border-slate-100 rounded-2xl focus:ring-4 focus:ring-brand-primary/10 outline-hidden transition-all"
                     />
                   </div>
@@ -326,6 +327,7 @@ const ProductsPage = () => {
                     <input 
                       type="number" required value={formData.cost_price}
                       onChange={e => setFormData({...formData, cost_price: parseInt(e.target.value)})}
+                      onWheel={(e) => (e.target as HTMLInputElement).blur()}
                       className="w-full px-5 py-3 bg-slate-50 border border-brand-primary/20 rounded-2xl focus:ring-4 focus:ring-brand-primary/10 outline-hidden transition-all font-bold"
                     />
                   </div>
@@ -341,6 +343,7 @@ const ProductsPage = () => {
                           <input 
                             type="number" placeholder="Contoh: 1000" value={calcMl}
                             className="w-full px-3 py-2 bg-white border border-slate-100 rounded-xl text-sm outline-hidden"
+                            onWheel={(e) => (e.target as HTMLInputElement).blur()}
                             onChange={(e) => {
                               const ml = e.target.value; setCalcMl(ml);
                               if (ml && calcPrice) setFormData({ ...formData, cost_price: Math.round(parseFloat(calcPrice) / parseFloat(ml)) });
@@ -352,6 +355,7 @@ const ProductsPage = () => {
                           <input 
                             type="number" placeholder="Contoh: 679000" value={calcPrice}
                             className="w-full px-3 py-2 bg-white border border-slate-100 rounded-xl text-sm outline-hidden"
+                            onWheel={(e) => (e.target as HTMLInputElement).blur()}
                             onChange={(e) => {
                               const price = e.target.value; setCalcPrice(price);
                               if (calcMl && price) setFormData({ ...formData, cost_price: Math.round(parseFloat(price) / parseFloat(calcMl)) });
@@ -367,6 +371,7 @@ const ProductsPage = () => {
                     <input 
                       type="number" required value={formData.stock}
                       onChange={e => setFormData({...formData, stock: parseInt(e.target.value)})}
+                      onWheel={(e) => (e.target as HTMLInputElement).blur()}
                       className="w-full px-5 py-3 bg-slate-50 border border-slate-100 rounded-2xl focus:ring-4 focus:ring-brand-primary/10 outline-hidden transition-all"
                     />
                   </div>
@@ -418,6 +423,7 @@ const ProductsPage = () => {
                   <input 
                     autoFocus type="number" required value={restockAmount}
                     onChange={e => setRestockAmount(e.target.value)}
+                    onWheel={(e) => (e.target as HTMLInputElement).blur()}
                     className="w-full px-5 py-4 bg-slate-50 border border-brand-primary/20 rounded-2xl focus:ring-4 focus:ring-brand-primary/10 outline-hidden transition-all text-center text-3xl font-bold text-brand-primary"
                     placeholder="0"
                   />

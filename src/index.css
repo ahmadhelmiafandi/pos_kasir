@@ -11,6 +11,17 @@
   --color-brand-danger: #ef4444;
 }
 
+/* Sembunyikan spin buttons di input number */
+input::-webkit-outer-spin-button,
+input::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+
+input[type=number] {
+  -moz-appearance: textfield;
+}
+
 @layer base {
   body {
     @apply bg-slate-50 text-slate-900 font-sans;

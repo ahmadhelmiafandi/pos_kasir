@@ -109,6 +109,7 @@ const CartContent = ({
                 className="w-full pl-12 pr-4 py-4 bg-white border border-slate-200 rounded-2xl focus:ring-4 focus:ring-brand-primary/10 transition-all outline-hidden font-bold text-slate-700 text-lg"
                 value={cashInput}
                 onChange={(e) => setCashInput(e.target.value)}
+                onWheel={(e) => (e.target as HTMLInputElement).blur()}
               />
            </div>
 
@@ -261,7 +262,12 @@ const POSPage = () => {
                   {p.name.charAt(0)}
                 </div>
                 <h4 className="font-bold text-slate-800 text-sm lg:text-base line-clamp-2 mb-1">{p.name}</h4>
-                <p className="text-slate-400 text-[10px] lg:text-xs font-semibold mb-2 lg:mb-3 uppercase tracking-wider">{p.category}</p>
+                <div className="flex justify-between items-center mb-2 lg:mb-3">
+                  <p className="text-slate-400 text-[10px] lg:text-xs font-semibold uppercase tracking-wider">{p.category}</p>
+                  <span className={`text-[10px] font-bold ${p.stock <= 10 ? 'text-brand-danger' : 'text-slate-400'}`}>
+                    Stok: {p.stock}
+                  </span>
+                </div>
                 <p className="mt-auto font-display font-bold text-brand-primary text-base lg:text-lg">
                   Rp {p.price.toLocaleString()}
                   <span className="text-[10px] lg:text-xs text-slate-400 font-sans ml-1">{p.type === 'PARFUM' ? '/ml' : '/pcs'}</span>
@@ -380,6 +386,7 @@ const POSPage = () => {
                     value={selectedProduct.type === 'PARFUM' ? mlInput : qtyInput}
                     onChange={(e) => selectedProduct.type === 'PARFUM' ? setMlInput(e.target.value) : setQtyInput(e.target.value)}
                     onKeyDown={(e) => e.key === 'Enter' && handleAddToCartModal()}
+                    onWheel={(e) => (e.target as HTMLInputElement).blur()}
                     className="w-full px-6 py-4 lg:py-5 bg-slate-50 border border-slate-100 rounded-2xl focus:ring-4 focus:ring-brand-primary/10 transition-all outline-hidden text-center text-xl lg:text-2xl font-bold text-slate-800"
                     placeholder="0"
                   />
