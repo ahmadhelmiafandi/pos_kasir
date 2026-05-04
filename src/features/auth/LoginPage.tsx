@@ -76,15 +76,7 @@ const LoginPage = () => {
             />
           </div>
 
-          {error && (
-            <motion.p 
-              initial={{ opacity: 0, x: -10 }}
-              animate={{ opacity: 1, x: 0 }}
-              className="text-brand-danger text-sm font-medium bg-red-50 p-3 rounded-lg border border-red-100"
-            >
-              {error}
-            </motion.p>
-          )}
+
 
           <button 
             type="submit"
