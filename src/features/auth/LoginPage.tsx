@@ -14,12 +14,16 @@ const LoginPage = () => {
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (email && password) {
-      if (password === 'admin123') { // Simple mock validation
-        login(email);
-        toast.success('Login berhasil!');
+      if (email === 'admin@agmal.com' && password === 'admin123') {
+        login(email, 'ADMIN');
+        toast.success('Login Admin berhasil!');
         navigate('/dashboard');
+      } else if (email === 'kasir@agmal.com' && password === 'kasir123') {
+        login(email, 'KASIR');
+        toast.success('Login Kasir berhasil!');
+        navigate('/pos');
       } else {
-        setError('Password salah! (Hint: admin123)');
+        setError('Email atau Password salah!');
         toast.error('Login gagal!');
       }
     } else {

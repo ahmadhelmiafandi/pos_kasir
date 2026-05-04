@@ -28,4 +28,5 @@ export interface Transaction {
 export interface User {
   email: string;
   name?: string;
+  role: 'ADMIN' | 'KASIR';
 }

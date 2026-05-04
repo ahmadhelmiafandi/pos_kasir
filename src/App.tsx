@@ -11,6 +11,17 @@ import DashboardPage from './features/dashboard/DashboardPage';
 import POSPage from './features/pos/POSPage';
 import ProductsPage from './features/products/ProductsPage';
 
+const ProtectedRoute = ({ children, allowedRoles }: { children: React.ReactNode, allowedRoles?: string[] }) => {
+  const { isAuthenticated, user } = useAuthStore();
+  
+  if (!isAuthenticated) return <Navigate to="/login" />;
+  if (allowedRoles && user && !allowedRoles.includes(user.role)) {
+    return <Navigate to={user.role === 'KASIR' ? '/pos' : '/dashboard'} />;
+  }
+  
+  return <Layout>{children}</Layout>;
+};
+
 export default function App() {
   const { isAuthenticated } = useAuthStore();
 
@@ -26,33 +37,27 @@ export default function App() {
         <Route 
           path="/dashboard" 
           element={
-            isAuthenticated ? (
-              <Layout>
-                <DashboardPage />
-              </Layout>
-            ) : <Navigate to="/login" />
+            <ProtectedRoute allowedRoles={['ADMIN']}>
+              <DashboardPage />
+            </ProtectedRoute>
           } 
         />
 
         <Route 
           path="/pos" 
           element={
-            isAuthenticated ? (
-              <Layout>
-                <POSPage />
-              </Layout>
-            ) : <Navigate to="/login" />
+            <ProtectedRoute allowedRoles={['ADMIN', 'KASIR']}>
+              <POSPage />
+            </ProtectedRoute>
           } 
         />
 
         <Route 
           path="/products" 
           element={
-            isAuthenticated ? (
-              <Layout>
-                <ProductsPage />
-              </Layout>
-            ) : <Navigate to="/login" />
+            <ProtectedRoute allowedRoles={['ADMIN']}>
+              <ProductsPage />
+            </ProtectedRoute>
           } 
         />
 
