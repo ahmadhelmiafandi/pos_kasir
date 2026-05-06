@@ -309,9 +309,9 @@ const POSPage = () => {
   const categories = ['Semua', ...new Set(products.map(p => p.category).filter(Boolean))];
 
   return (
-    <div className="flex flex-col lg:flex-row h-[calc(100vh-6rem)] gap-6 overflow-hidden">
+    <div className="flex flex-col lg:flex-row lg:h-[calc(100vh-6rem)] gap-6 lg:overflow-hidden">
       {/* Left: Product List */}
-      <div className="flex-1 flex flex-col min-w-0">
+      <div className="flex-1 flex flex-col min-w-0 min-h-0">
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6">
           <div>
             <h2 className="text-2xl lg:text-3xl font-bold text-slate-800 font-display">Kasir Pintar</h2>
@@ -352,7 +352,7 @@ const POSPage = () => {
           </div>
         </div>
 
-        <div className="flex-1 overflow-y-auto pr-2 custom-scrollbar">
+        <div className="flex-1 lg:overflow-y-auto pr-2 custom-scrollbar">
           {isLoading ? (
             <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-4 lg:gap-6">
               {[1,2,3,4,5,6,7,8].map(i => <div key={i} className="aspect-[3/4] bg-slate-100 rounded-3xl animate-pulse" />)}
