@@ -388,7 +388,7 @@ const POSPage = () => {
       </div>
 
       {/* Right: Checkout Sidebar */}
-      <div className="w-full lg:w-[400px] bg-white rounded-3xl border border-slate-100 shadow-sm overflow-hidden flex flex-col">
+      <div className="w-full lg:w-[400px] bg-white rounded-3xl border border-slate-100 shadow-sm lg:overflow-hidden flex flex-col">
         <CartContent 
           cart={cart}
           onRemove={removeItem}
