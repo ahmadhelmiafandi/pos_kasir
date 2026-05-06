@@ -405,7 +405,7 @@ const MembersPage = () => {
                         <p className="text-[10px] font-bold text-slate-400 uppercase mb-1">Total Belanja</p>
                         <p className="text-xl font-black text-slate-800">
                           {new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', maximumFractionDigits: 0 }).format(
-                            memberHistory.reduce((acc, curr) => acc + curr.total_amount, 0)
+                            memberHistory.reduce((acc, curr) => acc + curr.total, 0)
                           )}
                         </p>
                       </div>
@@ -433,7 +433,7 @@ const MembersPage = () => {
                               <p className="text-sm font-bold text-slate-800">ID: #{trx.id.slice(0, 8).toUpperCase()}</p>
                             </div>
                             <p className="font-black text-brand-primary">
-                              {new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', maximumFractionDigits: 0 }).format(trx.total_amount)}
+                              {new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', maximumFractionDigits: 0 }).format(trx.total)}
                             </p>
                           </div>
                           <div className="bg-slate-50 rounded-xl p-3 space-y-2">

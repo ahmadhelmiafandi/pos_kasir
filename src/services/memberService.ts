@@ -86,7 +86,7 @@ export const memberService = {
       .select(`
         id,
         created_at,
-        total_amount,
+        total,
         transaction_items (
           name,
           quantity,
