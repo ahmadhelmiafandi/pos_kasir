@@ -165,6 +165,7 @@ const CartContent = ({
             <CheckCircle size={24} />
             SELESAIKAN TRANSAKSI
            </button>
+           <p className="text-[8px] text-slate-300 text-center mt-2 opacity-50">Agmal POS v1.1 - Online Mode</p>
         </div>
       </div>
     </div>
